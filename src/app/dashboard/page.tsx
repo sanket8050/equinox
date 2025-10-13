@@ -4,8 +4,9 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Plus, Users, DollarSign, TrendingUp, Bell } from "lucide-react"
+import { Plus, Users, DollarSign, TrendingUp } from "lucide-react"
 import LogoutButton from "@/components/logout-button"
+import NotificationBell from "@/components/notification-bell"
 
 interface Group {
   id: string
@@ -81,12 +82,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/notifications"
-                className="p-2 text-gray-400 hover:text-gray-500"
-              >
-                <Bell className="h-6 w-6" />
-              </Link>
+              <NotificationBell />
               <div className="flex items-center space-x-3">
                 <Link
                   href="/groups/create"

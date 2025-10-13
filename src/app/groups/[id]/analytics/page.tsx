@@ -2,51 +2,79 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, TrendingUp, Users, DollarSign } from "lucide-react"
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-
-interface GroupMember {
-  id: string
-  role: "ADMIN" | "MEMBER"
-  balance: number
-  user: {
-    name: string
-  }
-}
-
-interface Transaction {
-  id: string
-  description: string
-  amount: number
-  date: string
-  addedBy: {
-    name: string
-  }
-  participants: {
-    userId: string
-    paid: number
-    owed: number
-  }[]
-}
+import { ArrowLeft, DollarSign, Users, TrendingUp, TrendingDown, Building, Plus } from "lucide-react"
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface Group {
   id: string
   name: string
-  members: GroupMember[]
-  transactions: Transaction[]
+  type: string
+  departments: string[]
+  members: Array<{
+    id: string
+    user: { name: string }
+    department?: string
+    balance: number
+  }>
 }
 
-export default function Analytics() {
+interface FundData {
+  totalCollected: number
+  totalSpent: number
+  remainingBalance: number
+  contributions: Array<{
+    id: string
+    amount: number
+    date: string
+    user: { name: string }
+  }>
+}
+
+interface DonationData {
+  donations: Array<{
+    id: string
+    donorName: string
+    amount: number
+    paymentMethod: string
+    date: string
+    recipient?: { name: string }
+    receivedByUser?: { name: string }
+  }>
+  totalDonations: number
+  totalAmount: number
+  donationsByMethod: Array<{
+    paymentMethod: string
+    _sum: { amount: number }
+    _count: { id: number }
+  }>
+}
+
+interface DepartmentAnalytics {
+  departments: string[]
+  analytics: Array<{
+    name: string
+    totalSpent: number
+    transactionCount: number
+    transactions: Array<{
+      id: string
+      description: string
+      amount: number
+      date: string
+    }>
+  }>
+}
+
+export default function OrganizationAnalytics() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const params = useParams()
-  const groupId = params.id as string
-  
   const [group, setGroup] = useState<Group | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [fundData, setFundData] = useState<FundData | null>(null)
+  const [donationData, setDonationData] = useState<DonationData | null>(null)
+  const [departmentAnalytics, setDepartmentAnalytics] = useState<DepartmentAnalytics | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -55,282 +83,287 @@ export default function Analytics() {
   }, [status, router])
 
   useEffect(() => {
-    if (session?.user?.id && groupId) {
-      fetchGroup()
+    if (status === "authenticated" && typeof window !== "undefined") {
+      const groupId = window.location.pathname.split("/")[2]
+      fetchGroupData(groupId)
     }
-  }, [session, groupId])
+  }, [status])
 
-  const fetchGroup = async () => {
+  const fetchGroupData = async (groupId: string) => {
     try {
-      const response = await fetch(`/api/groups/${groupId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setGroup(data.group)
-      } else {
-        router.push("/dashboard")
+      setIsLoading(true)
+      
+      // Fetch group details
+      const groupResponse = await fetch(`/api/groups/${groupId}`)
+      if (!groupResponse.ok) throw new Error("Failed to fetch group")
+      const groupData = await groupResponse.json()
+      setGroup(groupData.group)
+
+      // Fetch fund data
+      const fundResponse = await fetch(`/api/groups/${groupId}/contributions`)
+      if (fundResponse.ok) {
+        const fundData = await fundResponse.json()
+        setFundData(fundData)
       }
+
+      // Fetch donation data
+      const donationResponse = await fetch(`/api/groups/${groupId}/donations`)
+      if (donationResponse.ok) {
+        const donationData = await donationResponse.json()
+        setDonationData(donationData)
+      }
+
+      // Fetch department analytics
+      const departmentResponse = await fetch(`/api/groups/${groupId}/departments`)
+      if (departmentResponse.ok) {
+        const departmentData = await departmentResponse.json()
+        setDepartmentAnalytics(departmentData)
+      }
+
     } catch (error) {
-      console.error("Error fetching group:", error)
-      router.push("/dashboard")
+      console.error("Error fetching data:", error)
+      setError("Failed to load analytics data")
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
       </div>
     )
   }
 
-  if (!session || !group) {
-    return null
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
   }
 
-  // Prepare data for charts
-  const memberBalanceData = group.members.map(member => ({
-    name: member.user.name,
-    balance: Number(member.balance),
-    absBalance: Math.abs(Number(member.balance))
-  }))
+  if (!group || group.type !== "ORGANIZATION") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">This page is only available for organization groups</p>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
-  const transactionData = group.transactions.map(transaction => ({
-    name: transaction.description,
-    amount: Number(transaction.amount),
-    date: new Date(transaction.date).toLocaleDateString()
-  }))
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
-  const monthlyData = group.transactions.reduce((acc, transaction) => {
-    const month = new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    const existing = acc.find(item => item.month === month)
-    
-    if (existing) {
-      existing.amount += Number(transaction.amount)
-      existing.count += 1
-    } else {
-      acc.push({
-        month,
-        amount: Number(transaction.amount),
-        count: 1
-      })
-    }
-    
-    return acc
-  }, [] as { month: string; amount: number; count: number }[])
+  const paymentMethodData = donationData?.donationsByMethod.map((item, index) => ({
+    name: item.paymentMethod.replace('_', ' '),
+    value: Number(item._sum.amount),
+    count: item._count.id,
+    color: COLORS[index % COLORS.length]
+  })) || []
 
-  const totalSpent = group.transactions.reduce((sum, t) => sum + Number(t.amount), 0)
-  const avgTransaction = group.transactions.length > 0 ? totalSpent / group.transactions.length : 0
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+  const departmentData = departmentAnalytics?.analytics.map((dept, index) => ({
+    name: dept.name,
+    amount: dept.totalSpent,
+    transactions: dept.transactionCount,
+    color: COLORS[index % COLORS.length]
+  })) || []
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link
-                href={`/groups/${groupId}`}
-                className="mr-4 p-2 text-gray-400 hover:text-gray-500"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link 
+                href={`/groups/${group.id}`}
+                className="flex items-center text-gray-600 hover:text-gray-900"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                Back to Group
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                  {group.name}
+                <h1 className="text-3xl font-bold text-gray-900">{group.name} Analytics</h1>
+                <p className="text-gray-600">Organization fund tracking and analytics</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Building className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-600">Organization</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Fund Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <DollarSign className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Collected</p>
+                <p className="text-2xl font-bold text-green-600">
+                  ${fundData?.totalCollected.toFixed(2) || "0.00"}
                 </p>
               </div>
             </div>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <DollarSign className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Spent
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      ${totalSpent.toFixed(2)}
-                    </dd>
-                  </dl>
-                </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <TrendingDown className="h-8 w-8 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Spent</p>
+                <p className="text-2xl font-bold text-red-600">
+                  ${fundData?.totalSpent.toFixed(2) || "0.00"}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TrendingUp className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Avg Transaction
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      ${avgTransaction.toFixed(2)}
-                    </dd>
-                  </dl>
-                </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <TrendingUp className="h-8 w-8 text-blue-600" />
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Users className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Members
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {group.members.length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <DollarSign className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Transactions
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {group.transactions.length}
-                    </dd>
-                  </dl>
-                </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Remaining Balance</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  ${fundData?.remainingBalance.toFixed(2) || "0.00"}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Member Balances Chart */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Member Balances
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={memberBalanceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`$${value}`, 'Balance']} />
-                <Bar dataKey="balance" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Department Spending Chart */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Department Spending</h3>
+            {departmentData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={departmentData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                  <Bar dataKey="amount" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No department spending data available
+              </div>
+            )}
           </div>
 
-          {/* Monthly Spending Chart */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Monthly Spending
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
-                <Bar dataKey="amount" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Recent Transactions */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Recent Transactions
-            </h3>
-            <div className="space-y-3">
-              {group.transactions.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {transaction.description}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      by {transaction.addedBy.name} • {new Date(transaction.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    ${Number(transaction.amount).toFixed(2)}
-                  </span>
-                </div>
-              ))}
-              {group.transactions.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No transactions yet
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Member Summary */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Member Summary
-            </h3>
-            <div className="space-y-3">
-              {group.members.map((member) => (
-                <div key={member.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {member.user.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {member.role === "ADMIN" ? "Admin" : "Member"}
-                    </p>
-                  </div>
-                  <span className={`text-sm font-medium ${
-                    Number(member.balance) > 0 
-                      ? 'text-green-600' 
-                      : Number(member.balance) < 0 
-                        ? 'text-red-600' 
-                        : 'text-gray-600'
-                  }`}>
-                    ${Math.abs(Number(member.balance)).toFixed(2)}
-                    {Number(member.balance) > 0 && " owed"}
-                    {Number(member.balance) < 0 && " owes"}
-                  </span>
-                </div>
-              ))}
-            </div>
+          {/* Payment Methods Chart */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Donations by Payment Method</h3>
+            {paymentMethodData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={paymentMethodData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(Number(percent) * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {paymentMethodData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No donation data available
+              </div>
+            )}
           </div>
         </div>
-      </main>
+
+        {/* Recent Donations */}
+        <div className="mt-8 bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Donations</h3>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {donationData?.donations.slice(0, 10).map((donation) => (
+              <div key={donation.id} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{donation.donorName}</p>
+                    <p className="text-sm text-gray-500">
+                      {donation.paymentMethod.replace('_', ' ')} • 
+                      {donation.recipient && ` Received by: ${donation.recipient.name}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-green-600">+${donation.amount.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(donation.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )) || []}
+            {(!donationData?.donations || donationData.donations.length === 0) && (
+              <div className="px-6 py-8 text-center text-gray-500">
+                No donations recorded yet
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Department Details */}
+        <div className="mt-8 bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Department Details</h3>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {departmentAnalytics?.analytics.map((dept) => (
+              <div key={dept.name} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{dept.name}</p>
+                    <p className="text-sm text-gray-500">{dept.transactionCount} transactions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-red-600">${dept.totalSpent.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            )) || []}
+            {(!departmentAnalytics?.analytics || departmentAnalytics.analytics.length === 0) && (
+              <div className="px-6 py-8 text-center text-gray-500">
+                No departments configured yet
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

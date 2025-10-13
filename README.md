@@ -1,32 +1,48 @@
-# Xpence Tracker - Group Expense Management App
+# Equinox - Advanced Group Expense Tracker
 
-A comprehensive full-stack application for managing group expenses and donations, built with Next.js, Prisma, and PostgreSQL.
+A comprehensive full-stack application for managing group expenses and donations, built with Next.js, Prisma, and PostgreSQL. Equinox supports both Friends Groups and Organization Groups with advanced features for expense tracking, settlement, and analytics.
 
-## Features
+## 🌟 Key Features
 
-### 🎯 Core Functionality
-- **Dual Mode Support**: Friends Mode for casual trips and Organization Mode for events/campaigns
-- **Smart Settlement**: Automatic calculation of minimal transactions for balance settlement
-- **Real-time Notifications**: Instant updates for expenses, settlements, and reminders
-- **Multi-dashboard Access**: Personal and group-specific dashboards
-- **Full Transparency**: Complete transaction history and audit trails
+### 🎯 Dual Mode Support
+- **Friends Groups**: Peer-to-peer expense splitting with smart settlement
+- **Organization Groups**: Department-wise spending with donation tracking and fund management
 
-### 🔐 Authentication
-- Email/Password authentication
-- Google OAuth integration
-- Secure session management with NextAuth.js
+### 💰 Advanced Expense Management
+- **Equal & Custom Splitting**: Support for both equal shares and custom amounts
+- **Department-wise Expenses**: Track spending by department in organization groups
+- **Category Classification**: Organize expenses by categories (Food, Transportation, etc.)
+- **Partial Payments**: Handle complex payment scenarios with multiple contributors
 
-### 📊 Analytics & Reporting
-- Category-wise expense breakdown
-- Team-wise analytics (Organization Mode)
-- Contribution comparisons
-- Export to PDF/Excel
+### 🏢 Organization Features
+- **Department Management**: Create and manage departments for organized spending
+- **Donation Tracking**: Comprehensive donation system with payment methods
+- **Fund Management**: Track collected funds vs. spent amounts
+- **Recipient Tracking**: Track who received donations and payments
 
-### 👥 Group Management
-- Create groups with unique join codes
-- Role-based access (Admin/Member)
-- Team tagging for organization mode
-- Member balance tracking
+### ⚖️ Smart Settlement System
+- **Minimal Transactions**: Algorithm to minimize number of settlement transactions
+- **Real-time Balance Calculation**: Instant balance updates with visual indicators
+- **Settlement Recommendations**: Clear guidance on who pays whom
+- **Visual Balance Display**: Color-coded balances (green for owed, red for owing)
+
+### 🔔 Real-time Notifications
+- **Instant Updates**: Notifications for expenses, donations, and settlements
+- **Notification Center**: Comprehensive notification management
+- **Real-time Bell**: Notification bell with unread count
+- **Email Integration**: Optional email notifications
+
+### 📊 Advanced Analytics
+- **Department Analytics**: Spending breakdown by department
+- **Payment Method Tracking**: Donation analytics by payment method
+- **Visual Charts**: Interactive charts for spending patterns
+- **Fund Overview**: Complete financial transparency
+
+### 🔍 Search & Filter System
+- **Advanced Filtering**: Filter by date, amount, category, department, member
+- **Search Functionality**: Search across transactions and donations
+- **Real-time Results**: Instant filter results
+- **Saved Filters**: Remember filter preferences
 
 ## Tech Stack
 

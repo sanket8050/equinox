@@ -23,6 +23,8 @@ model User {
   notifications        Notification[]
   createdGroups        Group[]                  @relation("UserCreatedGroups")
   initialContributions InitialContribution[]
+  donationsReceived    Donation[]               @relation("DonationRecipient")
+  donationsReceivedBy  Donation[]               @relation("DonationReceivedBy")
 }
 
 model Group {
@@ -32,12 +34,14 @@ model Group {
   code        String    @unique
   createdById String
   createdAt   DateTime  @default(now())
+  departments String[]  @default([]) // For organization groups
 
   // Relations
   createdBy     User                  @relation("UserCreatedGroups", fields: [createdById], references: [id])
   members       GroupMember[]
   transactions  Transaction[]
   initialFunds  InitialContribution[]
+  donations     Donation[]
   notifications Notification[]
 }
 
@@ -65,6 +69,8 @@ model Transaction {
   amount      Decimal  @db.Decimal(10, 2)
   date        DateTime @default(now())
   isDeleted   Boolean  @default(false)
+  department  String?  // For organization groups
+  category    String?  // Expense category
 
   // Relations
   group        Group                    @relation(fields: [groupId], references: [id])
@@ -96,6 +102,24 @@ model InitialContribution {
   user  User  @relation(fields: [userId], references: [id])
 }
 
+model Donation {
+  id           String      @id @default(cuid())
+  groupId      String
+  donorName    String
+  donorEmail   String?
+  amount       Decimal     @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  recipientId  String?     // Who received the money
+  receivedBy   String?     // User who recorded the donation
+  date         DateTime    @default(now())
+  notes        String?
+
+  // Relations
+  group       Group  @relation(fields: [groupId], references: [id])
+  recipient   User?  @relation("DonationRecipient", fields: [recipientId], references: [id])
+  receivedByUser User? @relation("DonationReceivedBy", fields: [receivedBy], references: [id])
+}
+
 model Notification {
   id        String           @id @default(cuid())
   userId    String
@@ -123,10 +147,23 @@ enum MemberRole {
   MEMBER
 }
 
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  ONLINE
+  CHEQUE
+  OTHER
+}
+
 enum NotificationType {
   EXPENSE_ADDED
   EXPENSE_DELETED
   SETTLEMENT_UPDATE
   REMINDER
   INFO
+  DONATION_ADDED
+  MEMBER_JOINED
+  MEMBER_LEFT
 }

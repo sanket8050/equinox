@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Calculator, CheckCircle, AlertCircle } from "lucide-react"
+import { ArrowLeft, Calculator, CheckCircle, AlertCircle, TrendingUp, TrendingDown, Users, DollarSign } from "lucide-react"
 
 interface GroupMember {
   id: string
@@ -103,6 +103,25 @@ export default function Settlement() {
   const userMember = group?.members.find(m => m.user.name === session?.user?.name)
   const isAdmin = userMember?.role === "ADMIN"
 
+  const calculateSettlementStats = () => {
+    if (!group) return { totalOwed: 0, totalOwing: 0, creditorCount: 0, debtorCount: 0 }
+    
+    const creditors = group.members.filter(m => m.balance > 0)
+    const debtors = group.members.filter(m => m.balance < 0)
+    
+    const totalOwed = creditors.reduce((sum, m) => sum + m.balance, 0)
+    const totalOwing = Math.abs(debtors.reduce((sum, m) => sum + m.balance, 0))
+    
+    return {
+      totalOwed,
+      totalOwing,
+      creditorCount: creditors.length,
+      debtorCount: debtors.length
+    }
+  }
+
+  const stats = calculateSettlementStats()
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -143,6 +162,67 @@ export default function Settlement() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Settlement Overview Stats */}
+        {!isGroupSettled() && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <TrendingUp className="h-8 w-8 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Total Owed</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${stats.totalOwed.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <TrendingDown className="h-8 w-8 text-red-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Total Owing</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    ${stats.totalOwing.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Creditors</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats.creditorCount}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Users className="h-8 w-8 text-orange-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Debtors</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats.debtorCount}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Settlement Status */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-4 py-5 sm:p-6">
@@ -201,30 +281,94 @@ export default function Settlement() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Current Balances
             </h3>
+            
+            {/* Balance Summary */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Your Balance:</span>
+                <span className={`font-bold ${
+                  userMember && userMember.balance > 0 
+                    ? 'text-green-600' 
+                    : userMember && userMember.balance < 0 
+                      ? 'text-red-600' 
+                      : 'text-gray-600'
+                }`}>
+                  {userMember ? `$${Math.abs(userMember.balance).toFixed(2)}` : "$0.00"}
+                  {userMember && userMember.balance > 0 && " (you're owed)"}
+                  {userMember && userMember.balance < 0 && " (you owe)"}
+                  {userMember && userMember.balance === 0 && " (settled)"}
+                </span>
+              </div>
+            </div>
+
             <div className="space-y-3">
               {group.members.map((member) => (
-                <div key={member.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                <div key={member.id} className={`flex justify-between items-center p-4 rounded-lg border-l-4 ${
+                  member.balance > 0 
+                    ? 'bg-green-50 border-green-400' 
+                    : member.balance < 0 
+                      ? 'bg-red-50 border-red-400' 
+                      : 'bg-gray-50 border-gray-400'
+                }`}>
                   <div className="flex items-center">
-                    <span className="font-medium text-gray-900">
-                      {member.user.name}
-                    </span>
-                    {member.role === "ADMIN" && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                        Admin
-                      </span>
-                    )}
+                    <div className={`w-3 h-3 rounded-full mr-3 ${
+                      member.balance > 0 
+                        ? 'bg-green-500' 
+                        : member.balance < 0 
+                          ? 'bg-red-500' 
+                          : 'bg-gray-400'
+                    }`}></div>
+                    <div>
+                      <div className="flex items-center">
+                        <span className="font-medium text-gray-900">
+                          {member.user.name}
+                        </span>
+                        {member.role === "ADMIN" && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Admin
+                          </span>
+                        )}
+                        {member.user.name === session?.user?.name && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm ${
+                        member.balance > 0 
+                          ? 'text-green-600' 
+                          : member.balance < 0 
+                            ? 'text-red-600' 
+                            : 'text-gray-600'
+                      }`}>
+                        {member.balance > 0 && "Will receive money"}
+                        {member.balance < 0 && "Needs to pay"}
+                        {member.balance === 0 && "Settled"}
+                      </p>
+                    </div>
                   </div>
-                  <span className={`font-medium ${
-                    member.balance > 0 
-                      ? 'text-green-600' 
-                      : member.balance < 0 
-                        ? 'text-red-600' 
-                        : 'text-gray-600'
-                  }`}>
-                    ${Math.abs(member.balance).toFixed(2)}
-                    {member.balance > 0 && " (owed)"}
-                    {member.balance < 0 && " (owes)"}
-                  </span>
+                  <div className="text-right">
+                    <span className={`text-xl font-bold ${
+                      member.balance > 0 
+                        ? 'text-green-600' 
+                        : member.balance < 0 
+                          ? 'text-red-600' 
+                          : 'text-gray-600'
+                    }`}>
+                      ${Math.abs(member.balance).toFixed(2)}
+                    </span>
+                    <p className={`text-xs ${
+                      member.balance > 0 
+                        ? 'text-green-500' 
+                        : member.balance < 0 
+                          ? 'text-red-500' 
+                          : 'text-gray-500'
+                    }`}>
+                      {member.balance > 0 && "Owed"}
+                      {member.balance < 0 && "Owes"}
+                      {member.balance === 0 && "Even"}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

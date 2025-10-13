@@ -18,7 +18,16 @@ export async function POST(
     }
 
     const groupId = params.id
-    const { description, amount, date, paidBy, participants } = await request.json()
+    const { 
+      description, 
+      amount, 
+      date, 
+      paidBy, 
+      participants, 
+      department,
+      category,
+      customShares 
+    } = await request.json()
 
     if (!description || !amount || !paidBy || !participants || participants.length === 0) {
       return NextResponse.json(
@@ -34,6 +43,9 @@ export async function POST(
           userId: session.user.id,
           groupId: groupId
         }
+      },
+      include: {
+        group: true
       }
     })
 
@@ -42,6 +54,17 @@ export async function POST(
         { error: "Access denied" },
         { status: 403 }
       )
+    }
+
+    // Validate department for organization groups
+    if (userMember.group.type === "ORGANIZATION" && department) {
+      const validDepartments = userMember.group.departments || []
+      if (!validDepartments.includes(department)) {
+        return NextResponse.json(
+          { error: "Invalid department" },
+          { status: 400 }
+        )
+      }
     }
 
     // Verify all participants are members of the group
@@ -61,8 +84,31 @@ export async function POST(
       )
     }
 
-    // Calculate amount per person
-    const amountPerPerson = amount / participants.length
+    // Calculate shares - equal or custom
+    let participantShares: { userId: string; share: number }[] = []
+    
+    if (customShares && Object.keys(customShares).length === participants.length) {
+      // Validate custom shares
+      const totalCustomShare = Object.values(customShares).reduce((sum: number, share: any) => sum + Number(share), 0)
+      if (Math.abs(totalCustomShare - amount) > 0.01) {
+        return NextResponse.json(
+          { error: "Custom shares must equal total amount" },
+          { status: 400 }
+        )
+      }
+      
+      participantShares = participants.map((userId: string) => ({
+        userId,
+        share: Number(customShares[userId]) || 0
+      }))
+    } else {
+      // Equal sharing
+      const amountPerPerson = amount / participants.length
+      participantShares = participants.map((userId: string) => ({
+        userId,
+        share: amountPerPerson
+      }))
+    }
 
     // Create transaction with participants
     const transaction = await prisma.transaction.create({
@@ -72,11 +118,13 @@ export async function POST(
         date: new Date(date),
         groupId,
         addedById: session.user.id,
+        department: department || null,
+        category: category || null,
         participants: {
-          create: participants.map((userId: string) => ({
+          create: participantShares.map(({ userId, share }) => ({
             userId,
             paid: userId === paidBy ? amount : 0,
-            owed: userId === paidBy ? 0 : amountPerPerson
+            owed: userId === paidBy ? 0 : share
           }))
         }
       }
@@ -85,10 +133,10 @@ export async function POST(
     // Update member balances
     await Promise.all(
       groupMembers.map(async (member: any) => {
-        const participant = participants.find((id: string) => id === member.userId)
-        if (participant) {
-          const paid = participant === paidBy ? amount : 0
-          const owed = participant === paidBy ? 0 : amountPerPerson
+        const participantShare = participantShares.find(p => p.userId === member.userId)
+        if (participantShare) {
+          const paid = participantShare.userId === paidBy ? amount : 0
+          const owed = participantShare.userId === paidBy ? 0 : participantShare.share
           const balanceChange = paid - owed
 
           await prisma.groupMember.update({
