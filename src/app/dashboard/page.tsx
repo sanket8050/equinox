@@ -79,7 +79,7 @@ export default function Dashboard() {
   const totalBalance = groups.reduce((sum, group) => sum + Number(group.balance), 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-emerald-500 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,10 +107,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
         {/* Stats */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className=" bg-green-200 grid p-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-8 border-2 border-black">
+          <div className="bg-white overflow-hidden shadow rounded-lg border-2 border-blue-600">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -130,7 +130,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg border-blue-600 border-2">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -151,7 +151,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg border-blue-600 border-2">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -171,7 +171,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg border-blue-600 border-2">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
