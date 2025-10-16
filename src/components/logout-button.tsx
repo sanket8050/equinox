@@ -17,10 +17,10 @@ export default function LogoutButton({ className = "", variant = "button" }: Log
     return (
       <button
         onClick={handleLogout}
-        className={`p-2 text-gray-400 hover:text-gray-500 ${className}`}
+        className={`p-2 text-gray-400 hover:text-gray-500 ${className} cursor-pointer`}
         title="Logout"
       >
-        <LogOut className="h-5 w-5" />
+        <LogOut className="h-9 w-10 bg-red-400 p-1.5 rounded text-white" />
       </button>
     )
   }
