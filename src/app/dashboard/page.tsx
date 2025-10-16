@@ -256,10 +256,10 @@ export default function Dashboard() {
                     {/* Header Section */}
                     <div className="flex justify-between items-start">
                       <span
-                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center px-4  py-2 rounded-full text-xs font-semibold ${
                           group.type === "FRIENDS"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-green-100 text-green-800"
+                            ? "bg-blue-500 text-blue-800"
+                            : "bg-green-500 text-green-800"
                         }`}
                       >
                         {group.type === "FRIENDS" ? "Friends" : "Organization"}

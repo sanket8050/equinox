@@ -159,9 +159,9 @@ export default function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-blue-600 hover:text-white"
                 >
-                  Mark all as read
+                  Mark all as     read
                 </button>
               )}
             </div>
@@ -176,7 +176,7 @@ export default function NotificationBell() {
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm">No notifications yet</p>
+                <p className="text-sm text-amber-50">No notifications yet</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
@@ -240,7 +240,7 @@ export default function NotificationBell() {
                 setShowDropdown(false)
                 window.location.href = "/notifications"
               }}
-              className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="w-full text-sm text-black hover:text-white font-medium"
             >
               View all notifications
             </button>

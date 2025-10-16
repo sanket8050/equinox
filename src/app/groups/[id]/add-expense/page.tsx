@@ -257,7 +257,7 @@ export default function AddExpense() {
               </div>
 
               {/* Paid By */}
-              <div>
+              {/* <div>
                 <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700">
                   Paid By
                 </label>
@@ -266,17 +266,28 @@ export default function AddExpense() {
                   id="paidBy"
                   required
                   className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.paidBy}
+                  value={session.user.}
                   onChange={handleInputChange}
                 >
-                  <option value="">Select who paid</option>
+                  <option value={} >Select who paid</option>
                   {group.members.map((member) => (
                     <option key={member.id} value={member.user.id}>
                       {member.user.name}
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Paid By
+              </label>
+              <p className="mt-1 text-green-700 font-medium">
+                {session.user?.name} (You)
+              </p>
+              <input type="hidden" name="paidBy" value={session.user?.id} />
+            </div>
+
 
               {/* Participants */}
               <div>

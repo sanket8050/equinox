@@ -223,7 +223,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
         {/* Header */}
         <div className="mb-8">
@@ -335,7 +335,7 @@ export default function NotificationsPage() {
                             {notification.group.name}
                           </Link>
                         )}
-                        <p className="text-sm text-gray-400 mt-2">
+                        <p className="text-sm text-gray-400 mt-2 ">
                           {formatTimeAgo(notification.createdAt)}
                         </p>
                       </div>
@@ -373,7 +373,7 @@ export default function NotificationsPage() {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Previous
               </button>
