@@ -107,7 +107,7 @@ export default function Home() {
                   <div className="-mt-6">
                     <div>
                       <span className="inline-flex items-center justify-center p-3 bg-purple-500 rounded-md shadow-lg">
-                        <TrendingUp className="h-6 w-6 text-white" />
+                        <TrendingUp className="h-6 w-6 text-red-50" />
                       </span>
                     </div>
                     <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">
