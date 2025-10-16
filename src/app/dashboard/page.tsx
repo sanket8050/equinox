@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Plus, Users, DollarSign, TrendingUp } from "lucide-react"
+import { Plus, Users, DollarSign, TrendingUp, UserCircle } from "lucide-react"
 import LogoutButton from "@/components/logout-button"
 import NotificationBell from "@/components/notification-bell"
 
@@ -14,7 +14,16 @@ interface Group {
   type: "FRIENDS" | "ORGANIZATION"
   code: string
   balance: number
-  members: { id: string; user: { name: string } }[]
+  role: "ADMIN" | "MEMBER"
+  department?: string | null
+  members: { 
+    id: string
+    role: "ADMIN" | "MEMBER"
+    user: { 
+      id: string
+      name: string 
+    } 
+  }[]
   _count: {
     transactions: number
   }
@@ -72,21 +81,21 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gray-700 shadow">
+      <header className="bg-emerald-500 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-black">Dashboard</h1>
-              <p className="mt-1  text-white-500 ">
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="mt-1 text-sm text-gray-600">
                 Welcome back, {session.user?.name}
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <NotificationBell />
+              <NotificationBell  />
               <div className="flex items-center space-x-3">
                 <Link
                   href="/groups/create"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Group
@@ -121,7 +130,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -140,11 +149,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div> */}
-
-          
-
-
+          </div>
 
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -187,21 +192,26 @@ export default function Dashboard() {
           </div>
         </div>
 
-         {/* Join Group Section */}
-        <div className="mt-8 bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              Join a Group
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Have a group code? Click the button below to join an existing group.
-            </p>
-            <Link
-              href="/groups/join"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-            >
-              Join with Code
-            </Link>
+        {/* Join Group Section */}
+        <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 shadow rounded-lg border border-green-200">
+          <div className="px-4 py-5 sm:p-6 border-2 border-green-400 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+                  Join a Group
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Have a group code? Join an existing group to start tracking expenses together.
+                </p>
+              </div>
+              <Link
+                href="/groups/join"
+                className="inline-flex items-center px-6 py-3 border-2 border-amber-400 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Join with Code
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -219,64 +229,138 @@ export default function Dashboard() {
                 <p className="mt-1 text-sm text-gray-500">
                   Get started by creating a new group or joining an existing one.
                 </p>
-                <div className="mt-6">
+                <div className="mt-6 flex justify-center space-x-4 ">
                   <Link
                     href="/groups/create"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    className="inline-flex items-center px-4 py-2 border  shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First Group
                   </Link>
+                  <Link
+                    href="/groups/join"
+                    className="inline-flex items-center px-4 py-2 border-3 border-green-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 "
+                  >
+                    Join a Group
+                  </Link>
                 </div>
               </div>
-            ) : (
-              <div className="grid border-amber-950 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            ) : (<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
                   <Link
                     key={group.id}
                     href={`/groups/${group.id}`}
-                    className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                    className="relative group bg-gradient-to-b from-white to-gray-50 p-6 rounded-2xl  border-2 border-gray-500
+                      hover:border-blue-400 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    <div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        group.type === "FRIENDS" 
-                          ? "bg-blue-100 text-blue-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
+                    {/* Header Section */}
+                    <div className="flex justify-between items-start">
+                      <span
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                          group.type === "FRIENDS"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {group.type === "FRIENDS" ? "Friends" : "Organization"}
                       </span>
+
+                      {group.role === "ADMIN" && (
+                        <span className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                          Admin
+                        </span>
+                      )}
                     </div>
-                    <div className="mt-4">
-                      <h3 className="text-lg font-medium text-gray-900">
+
+                    {/* Group Info */}
+                    <div className="mt-5">
+                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
                         {group.name}
                       </h3>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Code: {group.code}
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Code:{" "}
+                        <span className="font-mono font-medium tracking-wide text-gray-800">
+                          {group.code}
+                        </span>
                       </p>
-                      <div className="mt-4 flex justify-between items-center">
-                        <div>
-                          <p className="text-sm text-gray-500">Members</p>
-                          <p className="text-lg font-medium text-gray-900">
-                            {group.members.length}
-                          </p>
+
+                      {group.type === "ORGANIZATION" && group.department && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Department:{" "}
+                          <span className="font-medium text-gray-800">
+                            {group.department}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Stats Section */}
+                    <div className="mt-6 flex justify-between items-center">
+                      <div>
+                        <p className="text-xs text-gray-500">Members</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {group.members.length}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Your Balance</p>
+                        <p
+                          className={`text-lg font-semibold ${
+                            Number(group.balance) >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          ${Math.abs(Number(group.balance)).toFixed(2)}
+                          {Number(group.balance) < 0 && " owed"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Members Avatars */}
+                    <div className="mt-5 pt-4 border-t border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex -space-x-2">
+                          {group.members.slice(0, 3).map((member) => (
+                            <div
+                              key={member.id}
+                              className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-xs font-semibold text-white shadow-sm ${
+                                member.user.id === session.user?.id
+                                  ? "bg-blue-600 ring-2 ring-blue-300"
+                                  : member.role === "ADMIN"
+                                  ? "bg-purple-600"
+                                  : "bg-gray-600"
+                              }`}
+                              title={`${member.user.name}${
+                                member.user.id === session.user?.id ? " (You)" : ""
+                              }${member.role === "ADMIN" ? " - Admin" : ""}`}
+                            >
+                              {member.user.name.charAt(0).toUpperCase()}
+                            </div>
+                          ))}
+                          {group.members.length > 3 && (
+                            <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-xs font-semibold text-gray-700">
+                              +{group.members.length - 3}
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Your Balance</p>
-                          <p className={`text-lg font-medium ${Number(group.balance) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${Math.abs(Number(group.balance)).toFixed(2)}
-                            {Number(group.balance) < 0 && " owed"}
-                          </p>
-                        </div>
+                        <span className="ml-3 text-xs text-gray-500">
+                          {group.members.filter((m) => m.role === "ADMIN").length}{" "}
+                          admin
+                          {group.members.filter((m) => m.role === "ADMIN").length !== 1
+                            ? "s"
+                            : ""}
+                        </span>
                       </div>
                     </div>
                   </Link>
                 ))}
               </div>
+
             )}
           </div>
         </div>
-
-       
       </main>
     </div>
   )

@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
           include: {
             user: {
               select: {
-                name: true
+                id: true,
+                name: true,
+                email: true
               }
             }
           }
@@ -63,24 +65,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate department for ORGANIZATION groups
+    if (group.type === "ORGANIZATION" && (!department || !department.trim())) {
+      return NextResponse.json(
+        { error: "Department is required for organization groups" },
+        { status: 400 }
+      )
+    }
+
     // Add user to group as a member
-    const groupMember = await prisma.groupMember.create({
+    await prisma.groupMember.create({
       data: {
         userId: session.user.id,
         groupId: group.id,
         role: "MEMBER",
         balance: 0,
-        department: department || null
+        department: group.type === "ORGANIZATION" ? department.trim() : null
       }
     })
 
     // Create notification for group admins
-    const admins = await prisma.groupMember.findMany({
-      where: {
-        groupId: group.id,
-        role: "ADMIN"
-      }
-    })
+    const admins = group.members.filter((member: any) => member.role === "ADMIN")
 
     if (admins.length > 0) {
       await prisma.notification.createMany({
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
           userId: admin.userId,
           groupId: group.id,
           title: "New Member Joined",
-          message: `${session.user?.name} joined "${group.name}"`,
+          message: `${session.user?.name || 'A user'} joined "${group.name}"`,
           type: "INFO"
         }))
       })
@@ -100,8 +105,7 @@ export async function POST(request: NextRequest) {
         id: group.id,
         name: group.name,
         type: group.type,
-        code: group.code,
-        members: group.members
+        code: group.code
       }
     })
   } catch (error) {

@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const groups = await prisma.groupMember.findMany({
+    // Fetch all groups where user is a member
+    const groupMembers = await prisma.groupMember.findMany({
       where: {
         userId: session.user.id
       },
@@ -26,7 +27,9 @@ export async function GET(request: NextRequest) {
               include: {
                 user: {
                   select: {
-                    name: true
+                    id: true,
+                    name: true,
+                    email: true
                   }
                 }
               }
@@ -41,17 +44,30 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const formattedGroups = groups.map((member: any) => ({
-      id: member.group.id,
-      name: member.group.name,
-      type: member.group.type,
-      code: member.group.code,
-      balance: member.balance,
-      members: member.group.members,
-      _count: member.group._count
+    // Transform the data to include user's role and balance in each group
+    const groups = groupMembers.map((membership) => ({
+      id: membership.group.id,
+      name: membership.group.name,
+      type: membership.group.type,
+      code: membership.group.code,
+      balance: membership.balance,
+      role: membership.role,
+      department: membership.department,
+      members: membership.group.members.map((member) => ({
+        id: member.id,
+        role: member.role,
+        balance: member.balance,
+        department: member.department,
+        user: {
+          id: member.user.id,
+          name: member.user.name,
+          email: member.user.email
+        }
+      })),
+      _count: membership.group._count
     }))
 
-    return NextResponse.json({ groups: formattedGroups })
+    return NextResponse.json({ groups })
   } catch (error) {
     console.error("Error fetching groups:", error)
     return NextResponse.json(

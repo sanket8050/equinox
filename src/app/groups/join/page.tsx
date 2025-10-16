@@ -12,6 +12,7 @@ export default function JoinGroup() {
   const [groupCode, setGroupCode] = useState("")
   const [department, setDepartment] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetchingGroup, setIsFetchingGroup] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [groupInfo, setGroupInfo] = useState<any>(null)
@@ -21,6 +22,36 @@ export default function JoinGroup() {
       router.push("/auth/signin")
     }
   }, [status, router])
+
+  // Fetch group info when code is complete (6 characters)
+  const fetchGroupInfo = async (code: string) => {
+    if (code.length !== 6) {
+      setGroupInfo(null)
+      return
+    }
+
+    setIsFetchingGroup(true)
+    setError("")
+
+    try {
+      const response = await fetch(`/api/groups/info?code=${code.toUpperCase()}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setGroupInfo(data.group)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || "Group not found")
+        setGroupInfo(null)
+      }
+    } catch (error) {
+      console.error(error)
+      setError("Failed to fetch group information")
+      setGroupInfo(null)
+    } finally {
+      setIsFetchingGroup(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,32 +65,29 @@ export default function JoinGroup() {
       return
     }
 
+    // Validate department for ORGANIZATION groups
+    if (groupInfo?.type === "ORGANIZATION" && !department.trim()) {
+      setError("Department is required for organization groups")
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await fetch(`/api/groups/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: groupCode.toUpperCase(),
-          department: department.trim(),
+          department: groupInfo?.type === "ORGANIZATION" ? department.trim() : null,
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        setGroupInfo(data.group)
-
-        // If organization and department is not yet provided
-        if (data.group.type === "ORGANIZATION" && !department.trim()) {
-          setSuccess("Please enter your department to continue")
-          setIsLoading(false)
-          return
-        }
-
-        // Success flow
         setSuccess("Successfully joined the group!")
         setTimeout(() => {
           router.push(`/groups/${data.group.id}`)
-        }, 2000)
+        }, 1500)
       } else {
         const errorData = await response.json()
         setError(errorData.error || "Failed to join group")
@@ -73,11 +101,18 @@ export default function JoinGroup() {
   }
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase()
+    const value = e.target.value.toUpperCase().slice(0, 6)
     setGroupCode(value)
     setError("")
     setSuccess("")
-    setGroupInfo(null)
+    setDepartment("") // Clear department when code changes
+    
+    // Fetch group info when code reaches 6 characters
+    if (value.length === 6) {
+      fetchGroupInfo(value)
+    } else {
+      setGroupInfo(null)
+    }
   }
 
   if (status === "loading") {
@@ -125,7 +160,7 @@ export default function JoinGroup() {
               {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center">
-                  <XCircle className="h-5 w-5 mr-2" />
+                  <XCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                   {error}
                 </div>
               )}
@@ -133,7 +168,7 @@ export default function JoinGroup() {
               {/* Success Message */}
               {success && (
                 <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2" />
+                  <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                   {success}
                 </div>
               )}
@@ -151,57 +186,72 @@ export default function JoinGroup() {
                   id="groupCode"
                   required
                   maxLength={6}
-                  className="mt-1 block w-full px-3 py-2 border text-gray-500 border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl font-mono tracking-widest"
+                  className="mt-1 block w-full px-3 py-2 border text-gray-900 border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl font-mono tracking-widest uppercase"
                   placeholder="ABC123"
                   value={groupCode}
                   onChange={handleCodeChange}
+                  disabled={isLoading}
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  Ask a group member for the 6-character group code
+                  Ask a group admin for the 6-character group code
                 </p>
               </div>
 
+              {/* Loading indicator while fetching group */}
+              {isFetchingGroup && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-gray-600">Loading group info...</span>
+                </div>
+              )}
+
+              {/* Group Info Preview */}
+              {groupInfo && !isFetchingGroup && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <div className="flex items-start">
+                    <Users className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-blue-900">
+                        {groupInfo.name}
+                      </h3>
+                      <p className="text-sm text-blue-700 mt-1">
+                        {groupInfo.type === "FRIENDS"
+                          ? "Friends Group"
+                          : "Organization Group"}{" "}
+                        • {groupInfo.memberCount || 0} member{groupInfo.memberCount !== 1 ? 's' : ''}
+                      </p>
+                      {groupInfo.type === "ORGANIZATION" && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          📋 Department information required
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Department Input (only for Organization) */}
-              {groupInfo?.type === "ORGANIZATION" && (
+              {groupInfo?.type === "ORGANIZATION" && !isFetchingGroup && (
                 <div>
                   <label
                     htmlFor="department"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Department
+                    Department <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="department"
                     required
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full px-3 py-2 border text-gray-900 border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Marketing, Engineering, Finance"
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
+                    disabled={isLoading}
                   />
                   <p className="mt-2 text-sm text-gray-500">
-                    Specify your department for better organization
+                    Specify your department within the organization
                   </p>
-                </div>
-              )}
-
-              {/* Group Info Preview */}
-              {groupInfo && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-blue-600 mr-2" />
-                    <div>
-                      <h3 className="text-sm font-medium text-blue-900">
-                        {groupInfo.name}
-                      </h3>
-                      <p className="text-sm text-blue-700">
-                        {groupInfo.type === "FRIENDS"
-                          ? "Friends Group"
-                          : "Organization Group"}{" "}
-                        • {groupInfo.members?.length || 0} members
-                      </p>
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -209,20 +259,21 @@ export default function JoinGroup() {
               <div className="flex justify-end space-x-3">
                 <Link
                   href="/dashboard"
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Cancel
                 </Link>
                 <button
                   type="submit"
-                  disabled={isLoading || !groupCode.trim()}
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  disabled={
+                    isLoading || 
+                    isFetchingGroup || 
+                    !groupInfo || 
+                    (groupInfo?.type === "ORGANIZATION" && !department.trim())
+                  }
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading
-                    ? "Joining..."
-                    : groupInfo?.type === "ORGANIZATION" && !department.trim()
-                    ? "Continue"
-                    : "Join Group"}
+                  {isLoading ? "Joining..." : "Join Group"}
                 </button>
               </div>
             </form>
@@ -235,11 +286,12 @@ export default function JoinGroup() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Need Help?
             </h3>
-            <div className="space-y-3"> 
+            <div className="space-y-3">
               {[
-                "Ask a group member for the 6-character group code",
-                "Enter the code above and click 'Join Group'",
-                "You'll be redirected to the group dashboard",
+                "Ask a group admin for the 6-character group code",
+                "Enter the code above - group details will appear automatically",
+                "For organization groups, enter your department",
+                "Click 'Join Group' to complete the process",
               ].map((text, i) => (
                 <div key={i} className="flex items-start">
                   <div className="flex-shrink-0">
