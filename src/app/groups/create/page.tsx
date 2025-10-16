@@ -220,7 +220,7 @@ export default function CreateGroup() {
                   className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
-                </Link>
+                </Link> 
                 <button
                   type="submit"
                   disabled={isLoading || !formData.name.trim()}
