@@ -143,7 +143,7 @@ export default function NotificationBell() {
         onClick={() => setShowDropdown(!showDropdown)}
         className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
       >
-        <Bell className="h-6 w-6" />
+        <Bell className="h-6 w-6 cursor-pointer text-amber-50" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
