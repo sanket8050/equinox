@@ -72,12 +72,12 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-gray-700 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-3xl font-bold text-black">Dashboard</h1>
+              <p className="mt-1  text-white-500 ">
                 Welcome back, {session.user?.name}
               </p>
             </div>
@@ -121,7 +121,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          {/* <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -140,7 +140,11 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
+
+          
+
+
 
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -183,6 +187,24 @@ export default function Dashboard() {
           </div>
         </div>
 
+         {/* Join Group Section */}
+        <div className="mt-8 bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Join a Group
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Have a group code? Click the button below to join an existing group.
+            </p>
+            <Link
+              href="/groups/join"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+            >
+              Join with Code
+            </Link>
+          </div>
+        </div>
+
         {/* Groups */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
@@ -208,7 +230,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid border-amber-950 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
                   <Link
                     key={group.id}
@@ -254,23 +276,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Join Group Section */}
-        <div className="mt-8 bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              Join a Group
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Have a group code? Click the button below to join an existing group.
-            </p>
-            <Link
-              href="/groups/join"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-            >
-              Join with Code
-            </Link>
-          </div>
-        </div>
+       
       </main>
     </div>
   )
