@@ -27,7 +27,6 @@ export default function JoinGroup() {
     setIsLoading(true)
     setError("")
     setSuccess("")
-    setGroupInfo(null)
 
     if (!groupCode.trim()) {
       setError("Please enter a group code")
@@ -38,19 +37,26 @@ export default function JoinGroup() {
     try {
       const response = await fetch(`/api/groups/join`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           code: groupCode.toUpperCase(),
-          department: department.trim() 
+          department: department.trim(),
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        setSuccess("Successfully joined the group!")
         setGroupInfo(data.group)
+
+        // If organization and department is not yet provided
+        if (data.group.type === "ORGANIZATION" && !department.trim()) {
+          setSuccess("Please enter your department to continue")
+          setIsLoading(false)
+          return
+        }
+
+        // Success flow
+        setSuccess("Successfully joined the group!")
         setTimeout(() => {
           router.push(`/groups/${data.group.id}`)
         }, 2000)
@@ -59,7 +65,8 @@ export default function JoinGroup() {
         setError(errorData.error || "Failed to join group")
       }
     } catch (error) {
-      setError("Something went wrong")
+      console.error(error)
+      setError("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -84,9 +91,7 @@ export default function JoinGroup() {
     )
   }
 
-  if (!session) {
-    return null
-  }
+  if (!session) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -112,10 +117,12 @@ export default function JoinGroup() {
         </div>
       </header>
 
+      {/* Main Form */}
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center">
                   <XCircle className="h-5 w-5 mr-2" />
@@ -123,6 +130,7 @@ export default function JoinGroup() {
                 </div>
               )}
 
+              {/* Success Message */}
               {success && (
                 <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2" />
@@ -132,16 +140,18 @@ export default function JoinGroup() {
 
               {/* Group Code Input */}
               <div>
-                <label htmlFor="groupCode" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="groupCode"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Group Code
                 </label>
                 <input
                   type="text"
-                  name="groupCode"
                   id="groupCode"
                   required
                   maxLength={6}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl font-mono tracking-widest"
+                  className="mt-1 block w-full px-3 py-2 border text-gray-500 border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-center text-2xl font-mono tracking-widest"
                   placeholder="ABC123"
                   value={groupCode}
                   onChange={handleCodeChange}
@@ -151,16 +161,19 @@ export default function JoinGroup() {
                 </p>
               </div>
 
-              {/* Department Input */}
+              {/* Department Input (only for Organization) */}
               {groupInfo?.type === "ORGANIZATION" && (
                 <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                    Department (Optional)
+                  <label
+                    htmlFor="department"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Department
                   </label>
                   <input
                     type="text"
-                    name="department"
                     id="department"
+                    required
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Marketing, Engineering, Finance"
                     value={department}
@@ -182,7 +195,10 @@ export default function JoinGroup() {
                         {groupInfo.name}
                       </h3>
                       <p className="text-sm text-blue-700">
-                        {groupInfo.type === "FRIENDS" ? "Friends Group" : "Organization Group"} • {groupInfo.members?.length || 0} members
+                        {groupInfo.type === "FRIENDS"
+                          ? "Friends Group"
+                          : "Organization Group"}{" "}
+                        • {groupInfo.members?.length || 0} members
                       </p>
                     </div>
                   </div>
@@ -202,7 +218,11 @@ export default function JoinGroup() {
                   disabled={isLoading || !groupCode.trim()}
                   className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
-                  {isLoading ? "Joining..." : "Join Group"}
+                  {isLoading
+                    ? "Joining..."
+                    : groupInfo?.type === "ORGANIZATION" && !department.trim()
+                    ? "Continue"
+                    : "Join Group"}
                 </button>
               </div>
             </form>
@@ -215,43 +235,23 @@ export default function JoinGroup() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Need Help?
             </h3>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">
-                    1
+            <div className="space-y-3"> 
+              {[
+                "Ask a group member for the 6-character group code",
+                "Enter the code above and click 'Join Group'",
+                "You'll be redirected to the group dashboard",
+              ].map((text, i) => (
+                <div key={i} className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">
+                      {i + 1}
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-700">{text}</p>
                   </div>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700">
-                    Ask a group member for the 6-character group code
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">
-                    2
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700">
-                    Enter the code above and click "Join Group"
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">
-                    3
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700">
-                    You'll be redirected to the group dashboard
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
