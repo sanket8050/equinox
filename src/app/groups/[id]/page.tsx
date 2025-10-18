@@ -164,7 +164,7 @@ export default function GroupDetail() {
                   </Link>
                 )}
                 <Link
-                  href={`/groups/${groupId}/add-expense-enhanced`}
+                  href={`/groups/${groupId}/add-expense`}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
