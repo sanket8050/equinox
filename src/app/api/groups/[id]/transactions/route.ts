@@ -131,25 +131,32 @@ export async function POST(
     })
 
     // Update member balances
+     // Calculate shares
+    const numParticipants = participants.length;
+    const amountPerPerson = amount / numParticipants;
+
     await Promise.all(
       groupMembers.map(async (member: any) => {
-        const participantShare = participantShares.find(p => p.userId === member.userId)
-        if (participantShare) {
-          const paid = participantShare.userId === paidBy ? amount : 0
-          const owed = participantShare.userId === paidBy ? 0 : participantShare.share
-          const balanceChange = paid - owed
+        // How much this member actually paid
+        const paidByMember = member.userId === paidBy ? amount : 0;
 
-          await prisma.groupMember.update({
-            where: { id: member.id },
-            data: {
-              balance: {
-                increment: balanceChange
-              }
+        // How much this member owes based on split
+        const share = amountPerPerson;
+
+        // Balance change = what they paid minus what they owe
+        const balanceChange = paidByMember - share;
+
+        await prisma.groupMember.update({
+          where: { id: member.id },
+          data: {
+            balance: {
+              increment: balanceChange
             }
-          })
-        }
+          }
+        });
       })
     )
+
 
     // Create notifications for all group members except the one who added the transaction
     const otherMembers = groupMembers.filter((m: any) => m.userId !== session.user.id)

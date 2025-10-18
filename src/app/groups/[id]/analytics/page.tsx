@@ -152,7 +152,7 @@ export default function OrganizationAnalytics() {
     )
   }
 
-  if (!group || group.type !== "ORGANIZATION") {
+  if (!group) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
