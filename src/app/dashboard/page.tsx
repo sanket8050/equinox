@@ -1,12 +1,15 @@
+
 "use client"
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Plus, Users, DollarSign, TrendingUp, UserCircle } from "lucide-react"
+import { Plus, Users, DollarSign, TrendingUp, LogOut } from "lucide-react"
 import LogoutButton from "@/components/logout-button"
 import NotificationBell from "@/components/notification-bell"
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"
+import toast, { Toaster } from "react-hot-toast"
 
 interface Group {
   id: string
@@ -34,6 +37,8 @@ export default function Dashboard() {
   const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -61,6 +66,39 @@ export default function Dashboard() {
     }
   }
 
+  const handleLeaveGroup = async () => {
+    if (!selectedGroup) return
+
+    try {
+      const res = await fetch(`/api/groups/${selectedGroup.id}/leave`, {
+        method: "POST",
+      })
+
+      if (res.ok) {
+        toast.success(`You have left "${selectedGroup.name}"`, {
+          position: "bottom-center",
+          duration: 4000,
+        })
+        setGroups((prev) => prev.filter((g) => g.id !== selectedGroup.id))
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Failed to leave group", {
+          position: "bottom-center",
+          duration: 4000,
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Something went wrong", {
+        position: "bottom-center",
+        duration: 4000,
+      })
+    } finally {
+      setIsModalOpen(false)
+      setSelectedGroup(null)
+    }
+  }
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -80,6 +118,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Toaster for notifications */}
+      <Toaster />
+
       {/* Header */}
       <header className="bg-emerald-500 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,7 +132,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <NotificationBell  />
+              <NotificationBell />
               <div className="flex items-center space-x-3">
                 <Link
                   href="/groups/create"
@@ -107,9 +148,9 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className=" bg-green-200 grid p-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-8 border-2 border-black">
+        <div className="bg-green-200 grid p-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-8 border-2 border-black">
           <div className="bg-white overflow-hidden shadow rounded-lg border-2 border-blue-600">
             <div className="p-5">
               <div className="flex items-center">
@@ -229,34 +270,34 @@ export default function Dashboard() {
                 <p className="mt-1 text-sm text-gray-500">
                   Get started by creating a new group or joining an existing one.
                 </p>
-                <div className="mt-6 flex justify-center space-x-4 ">
+                <div className="mt-6 flex justify-center space-x-4">
                   <Link
                     href="/groups/create"
-                    className="inline-flex items-center px-4 py-2 border  shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First Group
                   </Link>
                   <Link
                     href="/groups/join"
-                    className="inline-flex items-center px-4 py-2 border-3 border-green-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 "
+                    className="inline-flex items-center px-4 py-2 border-3 border-green-500 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Join a Group
                   </Link>
                 </div>
               </div>
-            ) : (<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {groups.map((group) => (
                   <Link
                     key={group.id}
                     href={`/groups/${group.id}`}
-                    className="relative group bg-gradient-to-b from-white to-gray-50 p-6 rounded-2xl  border-2 border-gray-500
-                      hover:border-blue-400 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                    className="relative group bg-gradient-to-b from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-500 hover:border-blue-400 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                   >
                     {/* Header Section */}
                     <div className="flex justify-between items-start">
                       <span
-                        className={`inline-flex items-center px-4  py-2 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold ${
                           group.type === "FRIENDS"
                             ? "bg-blue-500 text-blue-800"
                             : "bg-green-500 text-green-800"
@@ -346,21 +387,67 @@ export default function Dashboard() {
                           )}
                         </div>
                         <span className="ml-3 text-xs text-gray-500">
-                          {group.members.filter((m) => m.role === "ADMIN").length}{" "}
-                          admin
+                          {group.members.filter((m) => m.role === "ADMIN").length} admin
                           {group.members.filter((m) => m.role === "ADMIN").length !== 1
                             ? "s"
                             : ""}
                         </span>
                       </div>
                     </div>
+
+                    {/* Leave Group Button */}
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault() // Prevent navigation
+                          setSelectedGroup(group)
+                          setIsModalOpen(true)
+                        }}
+                        className="inline-flex items-center text-xs px-2 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        aria-label={`Leave ${group.name} group`}
+                      >
+                        <LogOut className="h-4 w-4 mr-1" />
+                        Leave Group
+                      </button>
+                    </div>
                   </Link>
                 ))}
               </div>
-
             )}
           </div>
         </div>
+
+        {/* Modal for Confirming Leave Group */}
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">
+          <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <DialogPanel className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+              <DialogTitle as="h3" className="text-lg font-semibold text-gray-900">
+                Leave Group
+              </DialogTitle>
+              <p className="mt-2 text-sm text-gray-600">
+                Are you sure you want to leave "{selectedGroup?.name}"? This action cannot be undone.
+              </p>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLeaveGroup}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Confirm
+                </button>
+              </div>
+            </DialogPanel>
+          </div>
+        </Dialog>
       </main>
     </div>
   )
