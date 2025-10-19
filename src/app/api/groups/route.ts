@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateGroupCode } from "@/lib/utils"
+import { Description } from "@headlessui/react"
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       id: membership.group.id,
       name: membership.group.name,
       type: membership.group.type,
+      Description:membership.group.description,
       code: membership.group.code,
       balance: membership.balance,
       role: membership.role,
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         type,
+        description,
         code: code!,
         createdById: session.user.id,
         members: {

@@ -10,7 +10,7 @@ import LogoutButton from "@/components/logout-button"
 import NotificationBell from "@/components/notification-bell"
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"
 import toast, { Toaster } from "react-hot-toast"
-
+import ChatBot from "@/components/chat"
 interface Group {
   id: string
   name: string
@@ -113,6 +113,7 @@ export default function Dashboard() {
   if (!session) {
     return null
   }
+
 
   const totalBalance = groups.reduce((sum, group) => sum + Number(group.balance), 0)
 
@@ -449,6 +450,8 @@ export default function Dashboard() {
           </div>
         </Dialog>
       </main>
+
+       {/* <ChatBot groupId={group.id} userId={session.user?.id} /> */}
     </div>
   )
 }

@@ -31,6 +31,7 @@ model Group {
   id          String    @id @default(cuid())
   name        String
   type        GroupType
+  description String?
   code        String    @unique
   createdById String
   createdAt   DateTime  @default(now())
