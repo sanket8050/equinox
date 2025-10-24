@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, DollarSign, Users, TrendingUp, TrendingDown, Building, Plus } from "lucide-react"
+import { ArrowLeft, DollarSign, Users, TrendingUp, TrendingDown, Building, Plus,Annoyed } from "lucide-react"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface Group {
@@ -183,6 +183,36 @@ export default function OrganizationAnalytics() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      
+      {group.type !== "organisation" ? (<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md w-full flex flex-col items-center">
+        {/* Icon section */}
+        <div className="flex justify-center w-full mb-2">
+          <Annoyed className="h-16 w-16 text-blue-500" />
+        </div>
+
+        {/* Heading */}
+        <h2 className="text-2xl font-semibold text-gray-900 text-center">
+          This page is only for organizations
+        </h2>
+
+        {/* Description */}
+        <p className="text-gray-500 mt-2 text-center">
+          Please go back to your previous page or return home.
+        </p>
+
+        {/* Button */}
+        <button
+          onClick={() => router.back()}
+          className="mt-5 inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Go Back
+        </button>
+      </div>
+    </div>):
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -202,7 +232,7 @@ export default function OrganizationAnalytics() {
             </div>
             <div className="flex items-center space-x-2">
               <Building className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">Organization</span>
+              <span className="text-sm font-medium text-blue-600">{group.type}</span>
             </div>
           </div>
         </div>
@@ -364,6 +394,8 @@ export default function OrganizationAnalytics() {
           </div>
         </div>
       </div>
+      
+      }
     </div>
   )
 }

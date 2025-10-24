@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Plus, Minus } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 interface GroupMember {
   id: string
   user: {
     id: string
     name: string
+    department :string
   }
 }
 
 interface Group {
   id: string
   name: string
+  type: "FRIENDS" | "ORGANIZATION"
   members: GroupMember[]
 }
 
@@ -31,7 +33,7 @@ export default function AddExpense() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
-  
+
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
@@ -39,6 +41,12 @@ export default function AddExpense() {
     paidBy: "",
     participants: [] as string[]
   })
+
+  const [orgData, setOrgData] = useState({
+    category: "",
+    department: ""
+  })
+  
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -92,18 +100,26 @@ export default function AddExpense() {
     }
 
     try {
+      const body: any = {
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        date: formData.date,
+        paidBy: formData.paidBy,
+        participants: formData.participants
+      }
+
+      // Add organization-specific fields only if group is ORGANIZATION
+      if (group?.type === "ORGANIZATION") {
+        body.category = orgData.category
+        body.department = orgData.department
+      }
+
       const response = await fetch(`/api/groups/${groupId}/transactions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          date: formData.date,
-          paidBy: formData.paidBy,
-          participants: formData.participants
-        }),
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
@@ -121,10 +137,11 @@ export default function AddExpense() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    if (name === "category" || name === "department") {
+      setOrgData(prev => ({ ...prev, [name]: value }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const toggleParticipant = (userId: string) => {
@@ -170,6 +187,8 @@ export default function AddExpense() {
     ? (parseFloat(formData.amount) / formData.participants.length).toFixed(2)
     : "0.00"
 
+  const isOrganization = group.type === "ORGANIZATION"
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -185,9 +204,7 @@ export default function AddExpense() {
               </Link>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Add Expense</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                  {group.name}
-                </p>
+                <p className="mt-1 text-sm text-gray-500">{group.name}</p>
               </div>
             </div>
           </div>
@@ -206,13 +223,10 @@ export default function AddExpense() {
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
                 <input
                   type="text"
                   name="description"
-                  id="description"
                   required
                   className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Dinner at restaurant, Gas for road trip"
@@ -223,13 +237,10 @@ export default function AddExpense() {
 
               {/* Amount */}
               <div>
-                <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                  Amount ($)
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Amount ($)</label>
                 <input
                   type="number"
                   name="amount"
-                  id="amount"
                   required
                   step="0.01"
                   min="0"
@@ -242,13 +253,10 @@ export default function AddExpense() {
 
               {/* Date */}
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                  Date
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Date</label>
                 <input
                   type="date"
                   name="date"
-                  id="date"
                   required
                   className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   value={formData.date}
@@ -256,46 +264,47 @@ export default function AddExpense() {
                 />
               </div>
 
+              {/* Organization-only fields */}
+              {isOrganization && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Category</label>
+                    <input
+                      type="text"
+                      name="category"
+                      value={orgData.category}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Expense category (optional)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Department</label>
+                    <p className="mt-1 text-green-700 font-medium">{orgData.department} </p>
+                    
+                    {/* <input
+                      type="text"
+                      name="department"
+                      value={orgData.department}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Department (optional)"
+                    /> */}
+                  </div>
+                </>
+              )}
+
               {/* Paid By */}
-              {/* <div>
-                <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700">
-                  Paid By
-                </label>
-                <select
-                  name="paidBy"
-                  id="paidBy"
-                  required
-                  className="mt-1 block w-full px-3 py-2 border text-green-700 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={session.user.}
-                  onChange={handleInputChange}
-                >
-                  <option value={} >Select who paid</option>
-                  {group.members.map((member) => (
-                    <option key={member.id} value={member.user.id}>
-                      {member.user.name}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-          {/* Paid By */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Paid By
-              </label>
-              <p className="mt-1 text-green-700 font-medium">
-                {session.user?.name} (You)
-              </p>
-              <input type="hidden" name="paidBy" value={session.user?.id} />
-            </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Paid By</label>
+                <p className="mt-1 text-green-700 font-medium">{session.user?.name} (You)</p>
+                <input type="hidden" name="paidBy" value={session.user?.id} />
+              </div>
 
               {/* Participants */}
-              <div>
+              {!isOrganization && <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Split Between
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Split Between</label>
                   <div className="flex space-x-2">
                     <button
                       type="button"
@@ -313,7 +322,7 @@ export default function AddExpense() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   {group.members.map((member) => (
                     <label key={member.id} className="flex items-center">
@@ -323,21 +332,19 @@ export default function AddExpense() {
                         onChange={() => toggleParticipant(member.user.id)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <span className="ml-3 text-sm text-gray-900">
-                        {member.user.name}
-                      </span>
+                      <span className="ml-3 text-sm text-gray-900">{member.user.name}</span>
                     </label>
                   ))}
                 </div>
 
-                {formData.participants.length > 0 && formData.amount && (
+                {!isOrganization && formData.participants.length > 0 && formData.amount && (
                   <div className="mt-3 p-3 bg-blue-50 rounded-md">
                     <p className="text-sm text-blue-800">
                       <strong>Amount per person:</strong> ${amountPerPerson}
                     </p>
                   </div>
                 )}
-              </div>
+              </div>}
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-3">
@@ -345,7 +352,7 @@ export default function AddExpense() {
                   href={`/groups/${groupId}`}
                   className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  Cancelxxxxxxxxxxxxx
+                  Cancel
                 </Link>
                 <button
                   type="submit"

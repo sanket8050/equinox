@@ -40,11 +40,13 @@ export async function GET(
       where: { id: groupId },
       include: {
         members: {
+          
           include: {
             user: {
               select: {
                 id: true,
                 name: true
+                
               }
             }
           }
