@@ -255,7 +255,7 @@ export default function DonationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Donations</p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${donationData?.totalAmount.toFixed(2) || "0.00"}
+                  ${Number(donationData?.totalAmount ?? 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export default function DonationsPage() {
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-green-600">+${donation.amount.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-green-600">+${Number(donation?.amount ?? 0).toFixed(2)}</p>
                     <p className="text-sm text-gray-500">
                       {new Date(donation.date).toLocaleDateString()}
                     </p>
