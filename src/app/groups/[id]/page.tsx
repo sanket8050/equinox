@@ -210,15 +210,24 @@ function GroupHeader({ group, userMember, isOrg = false }: { group: Group; userM
                 Settlement
               </Link>
               {isOrg && (
-                <Link href={`/groups/${group.id}/contributions`} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700">
+                <Link href={`/groups/${group.id}/donations`} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700">
                   <DollarSign className="h-4 w-4 mr-2" />
                   Contributions
                 </Link>
               )}
-              <Link href={`/groups/${group.id}/add-expense`} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+              {isOrg && (
+                <Link href={`/groups/${group.id}/add-expense-org`} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Expense
               </Link>
+              )}
+              {!isOrg && (
+                <Link href={`/groups/${group.id}/add-expense`} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Link>
+              )}
+              
             </div>
           </div>
         </div>
@@ -485,13 +494,13 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-semibold text-gray-900">Recent Expenses</h3>
                   <div className="flex items-center space-x-3">
-                    <Filter className="h-5 w-5 text-gray-600" />
+                    <Filter className="h-5 w-5 text-red-600" />
                     <select
                       value={departmentFilter}
                       onChange={(e) => setDepartmentFilter(e.target.value)}
-                      className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500"
+                      className=" text-sm border-1 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white appearance-none pr-8"
                     >
-                      <option value="all">All Departments</option>
+                      <option value="all" >All Departments</option>
                       {departments.map(dept => <option key={dept} >{dept}</option>)}
                     </select>
                   </div>
