@@ -277,7 +277,7 @@ function TransactionsList({ group, departmentFilter, isOrg = false }: { group: G
       })
       if (res.ok) {
         // refresh current route data
-        
+         
         router.refresh()
       } else {
         const err = await res.json().catch(() => null)
