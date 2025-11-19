@@ -126,6 +126,7 @@ export default function DonationsPage() {
       
       const data = await response.json()
       setDonationData(data)
+      console.log(data);
     } catch (error) {
       console.error("Error fetching donations:", error)
       setError("Failed to load donations")

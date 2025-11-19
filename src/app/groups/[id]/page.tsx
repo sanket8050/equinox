@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useMemo, useState, Dispatch, SetStateAction } from "react"
 import Link from "next/link"
+import Stats from "@/components/new/stats"
 import {
   ArrowLeft,
   Plus,
@@ -133,7 +134,7 @@ function formatCurrency(value: number, locale = "en-US", currency = "USD") {
 //
 // StatCard
 //
-function StatCard({ title, value, icon: Icon, color = "gray-400" }: StatCardProps) {
+ export function StatCard({ title, value, icon: Icon, color = "gray-400" }: StatCardProps) {
   const map = COLOR_MAP[color] ?? COLOR_MAP["gray-400"]
 
   return (
@@ -474,10 +475,12 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
       <GroupHeader group={group} userMember={userMember} isOrg={true} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <StatCard title="Total Collected" value={formatCurrency(totalCollected)} icon={DollarSign} color="blue-100" />
-          <StatCard title="Total Spent" value={formatCurrency(totalSpent)} icon={TrendingUp} color="red-100" />
-          <StatCard title="Remaining Balance" value={formatCurrency(remainingBalance)} icon={Calculator} color="green-100" />
-          <StatCard title="Departments" value={departments.length} icon={Building} color="purple-100" />
+{/* -          <StatCard title="Total Collected" value={formatCurrency(totalCollected)} icon={DollarSign} color="blue-100" />
+-          <StatCard title="Total Spent" value={formatCurrency(totalSpent)} icon={TrendingUp} color="red-100" />
+-          <StatCard title="Remaining Balance" value={formatCurrency(remainingBalance)} icon={Calculator} color="green-100" />
+-          <StatCard title="Departments" value={departments.length} icon={Building} color="purple-100" /> */}
++          {/* moved stats into separate component */}
++          <Stats group={group} totalSpent={totalSpent} departmentsCount={departments.length} />
         </div>
 
         <div className="bg-white shadow-md rounded-lg mb-8">
