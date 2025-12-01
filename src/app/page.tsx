@@ -161,19 +161,27 @@ import {
   Wallet,
 } from "lucide-react"
 
-// Cinematic Parallax Landing Page
-// - Keeps all routes and random data as requested
-// - Adds parallax layers, multi-color cursor glow, tilt/rotate on mouse move
-// - Uses rAF for high performance mouse handling
-
 export default function LandingPage() {
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
+  const [windowSize, setWindowSize] = useState({ width: 1920, height: 1080 }) // Default values
   const [activeTab, setActiveTab] = useState<"friends" | "organization">("friends")
   const [count, setCount] = useState(0)
   const rafRef = useRef<number | null>(null)
   const lastPos = useRef({ x: 0, y: 0 })
   const dashboardRef = useRef<HTMLDivElement | null>(null)
   const tiltRefs = useRef<Array<HTMLDivElement | null>>([])
+
+  // Set window size on mount
+  useEffect(() => {
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Scenarios kept as-is (random values preserved)
   const scenarios = {
@@ -312,7 +320,7 @@ export default function LandingPage() {
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
-        style={{ transform: `translate3d(${(mouse.x - window.innerWidth / 2) * 0.01}px, ${(mouse.y - window.innerHeight / 2) * 0.01}px, 0)` }}
+        style={{ transform: `translate3d(${(mouse.x - windowSize.width / 2) * 0.01}px, ${(mouse.y - windowSize.height / 2) * 0.01}px, 0)` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[#001219] via-[#031025] to-[#000000] opacity-95" />
 
@@ -479,25 +487,25 @@ export default function LandingPage() {
 
         {/* Feature Grid */}
         <div className="mt-16 grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-gradient-to-br from-blue-600/15 to-purple-600/15 border border-blue-500/10 rounded-3xl p-6 transform transition will-change-transform" /*ref={(el) => setTiltRef(el, 3)}*/>
+          <div className="md:col-span-2 bg-gradient-to-br from-blue-600/15 to-purple-600/15 border border-blue-500/10 rounded-3xl p-6 transform transition will-change-transform">
             <Wallet className="w-10 h-10 text-blue-400 mb-3" />
             <h3 className="text-2xl font-bold mb-1">Split Any Way</h3>
             <p className="text-gray-400">Equal, percentage, custom amounts, or itemized. You name it, we split it.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-600/15 to-emerald-600/15 border border-green-500/10 rounded-3xl p-6 transform transition will-change-transform" /*ref={(el) => setTiltRef(el, 4)}*/>
+          <div className="bg-gradient-to-br from-green-600/15 to-emerald-600/15 border border-green-500/10 rounded-3xl p-6 transform transition will-change-transform">
             <Shield className="w-10 h-10 text-green-400 mb-3" />
             <h3 className="text-2xl font-bold mb-1">Bank-Level Security</h3>
             <p className="text-gray-400">Your data is encrypted and private.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-600/15 to-red-600/15 border border-orange-500/10 rounded-3xl p-6 transform transition will-change-transform" /*ref={(el) => setTiltRef(el, 5)}*/>
+          <div className="bg-gradient-to-br from-orange-600/15 to-red-600/15 border border-orange-500/10 rounded-3xl p-6 transform transition will-change-transform">
             <TrendingUp className="w-10 h-10 text-orange-400 mb-3" />
             <h3 className="text-2xl font-bold mb-1">Real-Time Sync</h3>
             <p className="text-gray-400">Everyone sees updates instantly.</p>
           </div>
 
-          <div className="md:col-span-2 bg-gradient-to-br from-purple-600/15 to-pink-600/15 border border-purple-500/10 rounded-3xl p-6 transform transition will-change-transform" /*ref={(el) => setTiltRef(el, 6)}*/>
+          <div className="md:col-span-2 bg-gradient-to-br from-purple-600/15 to-pink-600/15 border border-purple-500/10 rounded-3xl p-6 transform transition will-change-transform">
             <PieChart className="w-10 h-10 text-purple-400 mb-3" />
             <h3 className="text-2xl font-bold mb-1">Visual Reports</h3>
             <p className="text-gray-400">Beautiful charts and insights. See where your money goes at a glance.</p>
@@ -530,4 +538,4 @@ export default function LandingPage() {
       `}</style>
     </div>
   )
-}
+} 
