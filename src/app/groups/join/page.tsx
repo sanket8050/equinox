@@ -845,10 +845,6 @@ export default function JoinGroup() {
                 ))}
               </div>
             </div>
-
-            
-
-            
           </div>
         </div>
       </main>
