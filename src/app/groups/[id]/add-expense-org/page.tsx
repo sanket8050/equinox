@@ -121,7 +121,7 @@ export default function AddExpenseOrg() {
   }, [session, groupId])
 
   useEffect(() => {
-    if (!loading && (!session || !group || group.type !== "ORGANIZATION" || !userRole || !userDepartment)) {
+    if (!loading && (!session || !group || group.type !== "ORGANIZATION" || !userRole )) {
       router.push(`/groups/${groupId}`)
     }
     // Optional: Restrict to admins only by uncommenting:
@@ -334,3 +334,7 @@ export default function AddExpenseOrg() {
     </div>
   )
 }
+
+
+//==========================================================================
+

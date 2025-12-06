@@ -171,6 +171,9 @@ export default function LandingPage() {
   const dashboardRef = useRef<HTMLDivElement | null>(null)
   const tiltRefs = useRef<Array<HTMLDivElement | null>>([])
 
+  const [animatedAmount, setAnimatedAmount] = useState(100);
+
+
   // Set window size on mount
   useEffect(() => {
     setWindowSize({ width: window.innerWidth, height: window.innerHeight })
@@ -293,6 +296,36 @@ export default function LandingPage() {
   const setTiltRef = (el: HTMLDivElement | null, idx: number) => {
     tiltRefs.current[idx] = el
   }
+
+  // const finalAmount = Number(String(activeScenario.amount).replace(/[^\d]/g, ""));
+  useEffect(() => {
+  if (!mouse.x && !mouse.y) return;
+  
+
+  setAnimatedAmount((prev) => {
+    // random increment between 20 and 500
+        
+    const jump = Math.floor(Math.random() * 480) + 20;
+
+    // new increasing amount
+    const next = prev + jump;
+
+    // keep it within 5 digit range
+    if (next > 200000)return 100;  // cap at 5 digits
+   
+    return next;
+    
+  });
+}, [mouse,activeTab]);
+
+// when tab chages the amount resets 
+useEffect(() => {
+  setAnimatedAmount(200);   // reset to 200 when switching tabs
+}, [activeTab]);
+
+
+
+
 
   // small utility to create shimmer animation for numbers
   const ShimmerNumber = ({ value }: { value: string | number }) => (
@@ -426,10 +459,10 @@ export default function LandingPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-gray-400 mb-1">Total Amount</div>
-                  <div className="text-2xl font-bold text-green-400">{activeScenario.amount}</div>
+                  <div className="text-2xl font-bold text-green-400">₹{animatedAmount.toLocaleString()}</div>
                 </div>
               </div>
-
+              
               <div className="flex gap-3 mb-4">
                 <button onClick={() => setActiveTab("friends")} className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${activeTab === "friends" ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-gray-400 hover:text-white'}`}>
                   👥 Friends
@@ -538,4 +571,4 @@ export default function LandingPage() {
       `}</style>
     </div>
   )
-} 
+}  

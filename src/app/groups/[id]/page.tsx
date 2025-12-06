@@ -714,12 +714,16 @@ import {
   Users,
   DollarSign,
   TrendingUp,
+  TrendingDownIcon,
   Settings,
   Share2,
   Calculator,
   Filter,
   Building,
   Trash2,
+  TrendingUpDown,
+  TrendingUpIcon,
+  TrendingDown,
 } from "lucide-react"
 import LogoutButton from "@/components/logout-button"
 
@@ -814,13 +818,13 @@ interface TabProps<T extends string> {
 // Helpers
 //
 const COLOR_MAP: Record<string, { wrapper: string; iconWrapper: string; icon: string; text: string }> = {
-  "blue-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-blue-900/30", icon: "text-blue-400", text: "text-white" },
-  "green-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-green-900/30", icon: "text-green-400", text: "text-white" },
-  "purple-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-purple-900/30", icon: "text-purple-400", text: "text-white" },
-  "red-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-red-900/30", icon: "text-red-400", text: "text-white" },
-  "gray-400": { wrapper: "bg-zinc-900", iconWrapper: "bg-zinc-800", icon: "text-gray-300", text: "text-white" },
-  "red-600": { wrapper: "bg-zinc-900", iconWrapper: "bg-red-900/30", icon: "text-red-500", text: "text-white" },
-  "green-600": { wrapper: "bg-zinc-900", iconWrapper: "bg-green-900/30", icon: "text-green-500", text: "text-white" },
+  "blue-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-blue-900/30", icon: "text-blue-400", text: "text-blue-200" },
+  "green-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-green-900/30", icon: "text-green-400", text: "text-green-400" },
+  "purple-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-purple-900/30", icon: "text-purple-400", text: "text-purple-400" },
+  "red-100": { wrapper: "bg-zinc-900", iconWrapper: "bg-red-900/30", icon: "text-red-400", text: "text-red-400" },
+  "gray-400": { wrapper: "bg-zinc-900", iconWrapper: "bg-zinc-800", icon: "text-gray-300", text: "text-gray-400" },
+  "red-600": { wrapper: "bg-zinc-900", iconWrapper: "bg-red-900/30", icon: "text-red-500", text: "text-red-400" },
+  "green-600": { wrapper: "bg-zinc-900", iconWrapper: "bg-green-900/30", icon: "text-green-500", text: "text-green-400" },
 }
 
 function toNumber(value: any): number {
@@ -1070,7 +1074,7 @@ function FriendsGroupUI({ group, session, userMember, totalSpent, totalMembers }
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          <StatCard title="Total Spent" value={formatCurrency(totalSpent)} icon={DollarSign} />
+          <StatCard title="Total Spent" value={formatCurrency(totalSpent)} icon={DollarSign} color="green-600"/>
           <StatCard title="Members" value={totalMembers} icon={Users} />
           <StatCard
             title="Your Balance"
@@ -1079,8 +1083,11 @@ function FriendsGroupUI({ group, session, userMember, totalSpent, totalMembers }
                 ? `${formatCurrency(Math.abs(toNumber(userMember.balance)))}
                    ${toNumber(userMember.balance) < 0 ? "owed" : ""}`
                 : formatCurrency(0)
+               
             }
-            icon={TrendingUp}
+           
+
+            icon={toNumber(userMember?.balance) < 0 ? TrendingDownIcon : TrendingUp}
             color={toNumber(userMember?.balance) < 0 ? "red-600" : "green-600"}
           />
           <StatCard title="Transactions" value={group.transactions.length} icon={DollarSign} />
@@ -1233,7 +1240,10 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Stats group={group} totalSpent={totalSpent} departmentsCount={departments.length} />
+          
+        
         </div>
+        
 
         {/* Card Wrapper */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl mb-8">
@@ -1260,7 +1270,7 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
                     >
                       <option value="all">All Departments</option>
                       {departments.map((dept) => (
-                        <option key={dept} value={dept}>{dept}</option>
+                        <option key={dept} >{dept}</option>
                       ))}
                     </select>
                   </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { DollarSign, TrendingUp, Calculator, Building } from "lucide-react"
 import { StatCard } from "@/app/groups/[id]/page" // kept as requested
+// import { Stats } from "fs"
 // ...existing code...
 
 type DonationResponse = {
@@ -65,12 +66,13 @@ export default function Stats({ group, totalSpent, departmentsCount }: { group: 
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(Math.round(val * 100) / 100)
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <>
       <StatCard title="Total Collected" value={isLoading ? "...": formatCurrency(totalCollected)} icon={DollarSign} color="blue-100" />
       <StatCard title="Total Spent" value={formatCurrency(totalSpent ?? 0)} icon={TrendingUp} color="red-100" />
-      <StatCard title="Remaining Balance" value={formatCurrency(remainingBalance)} icon={Calculator} color="green-100" />
+      <StatCard title="Remaining Balance" value={formatCurrency(remainingBalance)} icon={Calculator} color="green-400" />
       <StatCard title="Departments" value={departmentsCount ?? 0} icon={Building} color="purple-100" />
-    </div>
+    </>
+    
   )
 }
-  
+ 
