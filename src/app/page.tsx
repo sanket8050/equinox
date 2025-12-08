@@ -482,12 +482,12 @@ useEffect(() => {
                           <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center font-bold">{person[0]}</div>
                           <span>{person}</span>
                         </div>
-                        <div className="text-sm text-green-400">+${(Math.random() * 100).toFixed(2)}</div>
+                        <div className="text-sm text-green-400">+₹{(Math.random() * 100).toFixed(2)}</div>
                       </div>
                     ))}
                   </div>
                 </div>
-
+ 
                 <div className="bg-black/30 rounded-2xl p-3 border border-zinc-800" ref={(el) => setTiltRef(el, 1)}>
                   <h4 className="text-sm font-semibold text-gray-400 mb-3">RECENT EXPENSES</h4>
                   <div className="space-y-2">
@@ -499,7 +499,7 @@ useEffect(() => {
                           </div>
                           <span>{item}</span>
                         </div>
-                        <div className="text-sm text-gray-400">${(Math.random() * 200 + 50).toFixed(2)}</div>
+                        <div className="text-sm text-gray-400">₹{(Math.random() * 200 + 50).toFixed(2)}</div>
                       </div>
                     ))}
                   </div>

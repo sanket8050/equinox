@@ -634,11 +634,11 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-zinc-900 rounded-xl p-3">
                 <p className="text-xs text-gray-500 mb-1">You owe</p>
-                <p className="text-lg font-bold text-red-400">${youOwe.toFixed(2)}</p>
+                <p className="text-lg font-bold text-red-400">₹{youOwe.toFixed(2)}</p>
               </div>
               <div className="bg-zinc-900 rounded-xl p-3">
                 <p className="text-xs text-gray-500 mb-1">You're owed</p>
-                <p className="text-lg font-bold text-green-400">${youAreOwed.toFixed(2)}</p>
+                <p className="text-lg font-bold text-green-400">₹{youAreOwed.toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -797,7 +797,7 @@ export default function Dashboard() {
                       <p className={`text-3xl font-bold ${
                         Number(group.balance) >= 0 ? "text-green-400" : "text-red-400"
                       }`}>
-                        {Number(group.balance) >= 0 ? "+" : "-"}${Math.abs(Number(group.balance)).toFixed(2)}
+                        {Number(group.balance) >= 0 ? "+" : "-"}₹{Math.abs(Number(group.balance)).toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {Number(group.balance) >= 0 
