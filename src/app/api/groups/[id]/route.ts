@@ -17,7 +17,15 @@ export async function GET(
       )
     }
 
-    const groupId = params.id
+    // Robustly derive group id to avoid undefined errors in production
+    const groupId = params?.id || request.nextUrl.pathname.split("/").pop()
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group id is required" },
+        { status: 400 }
+      )
+    }
 
     // Check if user is a member of this group
     const userMember = await prisma.groupMember.findUnique({
