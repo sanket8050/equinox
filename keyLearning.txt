@@ -366,3 +366,7 @@ Ready to explain confidently in interviews
 To fix it, I removed the url from the schema and moved it into prisma.config.ts as required by Prisma 7. I verified the fix locally, pushed the changes, and performed a clean redeploy on Vercel by clearing the build cache. The build succeeded, and my production domain started updating again.
 
 This experience improved my skills in debugging CI/CD pipelines, reading build logs, understanding Prisma migrations, and managing Vercel deployments.”
+
+
+
+// sonar vulnarability--------code testing after code complition ---sonarwube
