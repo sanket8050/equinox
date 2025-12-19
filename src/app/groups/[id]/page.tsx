@@ -724,6 +724,8 @@ import {
   TrendingUpDown,
   TrendingUpIcon,
   TrendingDown,
+  HandCoins, 
+  HandCoinsIcon
 } from "lucide-react"
 import LogoutButton from "@/components/logout-button"
 
@@ -991,9 +993,18 @@ function TransactionsList({ group, departmentFilter, isOrg = false }: { group: G
     setDeletingId(transactionId)
 
     try {
-      const res = await fetch(`/api/groups/${transactionId}/deleteTS`, { method: "DELETE" })
-      if (res.ok) router.refresh()
-      else alert("Failed to delete")
+      const res = await fetch(`/api/groups/${group.id}/deleteTS?transactionId=${transactionId}`, { 
+        method: "DELETE" 
+      })
+      if (res.ok) {
+        router.refresh()
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "Failed to delete" }))
+        alert(errorData.error || "Failed to delete")
+      }
+    } catch (error) {
+      console.error("Error deleting transaction:", error)
+      alert("An error occurred while deleting the transaction")
     } finally {
       setDeletingId(null)
     }
@@ -1064,6 +1075,8 @@ function FriendsGroupUI({ group, session, userMember, totalSpent, totalMembers }
     { id: "transactions", label: "Transactions", icon: DollarSign },
     { id: "members", label: "Members", icon: Users },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
+   
+
   ] as const
 
   return (
@@ -1153,6 +1166,8 @@ function FriendsGroupUI({ group, session, userMember, totalSpent, totalMembers }
                 </Link>
               </div>
             )}
+
+            
           </div>
         </div>
       </main>
@@ -1167,8 +1182,13 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
   group: Group; session: any; userMember: GroupMember | undefined; totalSpent: number; totalMembers: number;
   totalCollected: number; remainingBalance: number;
 }) {
-  const [activeTab, setActiveTab] = useState<"transactions" | "members" | "departments" | "analytics">("transactions")
+  const [activeTab, setActiveTab] = useState<"transactions" | "members" | "departments" | "analytics" | "donations">("transactions")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
+  // 🔹 Donations state
+const [donations, setDonations] = useState<any[]>([])
+const [donationsLoading, setDonationsLoading] = useState(false)
+const [donationsError, setDonationsError] = useState<string | null>(null)
+
 
   const departments =
     group.departments?.length
@@ -1180,6 +1200,8 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
     { id: "members", label: "Members", icon: Users },
     { id: "departments", label: "Departments", icon: Building },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
+    { id: "donations", label: "Donations", icon: HandCoinsIcon },
+   
   ] as const
 
   const deptSpending = useMemo(() => {
@@ -1230,6 +1252,31 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
 
     return months.map((m) => ({ name: m.label, value: Math.round(m.total * 100) / 100 }))
   }, [group.transactions])
+  // 🔹 Fetch donations when Donations tab opens
+const fetchDonations = async () => {
+  try {
+    setDonationsLoading(true)
+    setDonationsError(null)
+
+    const res = await fetch(`/api/groups/${group.id}/donations?page=1&limit=50`)
+    if (!res.ok) throw new Error("Failed to fetch donations")
+
+    const data = await res.json()
+    setDonations(data.donations || [])
+  } catch (err) {
+    console.error(err)
+    setDonationsError("Unable to load donations")
+  } finally {
+    setDonationsLoading(false)
+  }
+}
+
+// 🔹 Trigger fetch ONLY when Donations tab is clicked
+useEffect(() => {
+  if (activeTab === "donations") {
+    fetchDonations()
+  }
+}, [activeTab])
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -1299,13 +1346,9 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
                           </p>
                         </div>
 
-                        <p
-                          className={`text-base font-semibold ${
-                            toNumber(member.balance) >= 0 ? "text-green-400" : "text-red-400"
-                          }`}
-                        >
-                          {formatCurrency(Math.abs(toNumber(member.balance)))}
-                          {toNumber(member.balance) < 0 && " owed"}
+                        {/* Organization groups don't show member balances */}
+                        <p className="text-base font-semibold text-gray-400">
+                          {member.role === "ADMIN" ? "Admin" : "Member"}
                         </p>
                       </div>
                     </div>
@@ -1362,6 +1405,62 @@ function OrganizationGroupUI({ group, session, userMember, totalSpent, totalMemb
                 </div>
               </div>
             )}
+
+            {activeTab === "donations" && (
+              <div>
+                <h3 className="text-xl font-semibold mb-6">Donation History</h3>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+
+                  {donations.map((donation) => (
+                    <div key={donation.id} className="p-4 flex justify-between">
+                      <div>
+                        <p className="text-white font-medium">
+                          {donation.donorName}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {donation.paymentMethod?.replace("_", " ")}
+                        </p>
+                        {donation.receivedByUser && (
+                          <p className="text-xs text-gray-500">
+                            Recorded by: {donation.receivedByUser.name}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-green-400 font-bold">
+                          +₹{Number(donation.amount).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(donation.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {donationsLoading && (
+                    <div className="p-6 text-center text-gray-400">
+                      Loading donations...
+                    </div>
+                  )}
+
+                  {!donationsLoading && donations.length === 0 && (
+                    <div className="p-6 text-center text-gray-500">
+                      No donations recorded yet
+                    </div>
+                  )}
+
+                  {donationsError && (
+                    <div className="p-6 text-center text-red-400">
+                      {donationsError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+
 
             {activeTab === "analytics" && (
               <div>

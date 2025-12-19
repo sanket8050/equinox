@@ -6,7 +6,7 @@ import { calculateSettlement, isGroupSettled } from "@/lib/settlement"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,15 @@ export async function POST(
       )
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
 
     // Check if user is an admin of this group
     const userMember = await prisma.groupMember.findUnique({
@@ -49,6 +57,14 @@ export async function POST(
       return NextResponse.json(
         { error: "Only group admins can trigger settlement" },
         { status: 403 }
+      )
+    }
+
+    // Organization groups don't have settlements (they don't track member balances)
+    if (userMember.group.type === "ORGANIZATION") {
+      return NextResponse.json(
+        { error: "Settlement is not applicable for organization groups" },
+        { status: 400 }
       )
     }
 

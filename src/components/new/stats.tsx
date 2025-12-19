@@ -71,6 +71,8 @@ export default function Stats({ group, totalSpent, departmentsCount }: { group: 
       <StatCard title="Total Spent" value={formatCurrency(totalSpent ?? 0)} icon={TrendingUp} color="red-100" />
       <StatCard title="Remaining Balance" value={formatCurrency(remainingBalance)} icon={Calculator} color="green-400" />
       <StatCard title="Departments" value={departmentsCount ?? 0} icon={Building} color="purple-100" />
+
+      
     </>
     
   )

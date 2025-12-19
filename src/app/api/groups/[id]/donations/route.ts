@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client"
 // ✅ POST — Add a new donation
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,15 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const { donorName, donorEmail, amount, paymentMethod, recipientId, notes } =
       await request.json()
 
@@ -119,7 +127,7 @@ export async function POST(
 // ✅ GET — Fetch donations, totals, and summary analytics
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -127,7 +135,15 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
 
     const userMember = await prisma.groupMember.findUnique({
       where: {
@@ -198,14 +214,22 @@ export async function GET(
 }
 
 // ✅ PATCH — Edit donation (Admin only)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const { donationId, donorName, amount, paymentMethod, notes } = await request.json()
 
     if (!donationId) {
@@ -243,14 +267,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // ✅ DELETE — Remove donation (Admin only)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const { donationId } = await request.json()
 
     if (!donationId) {

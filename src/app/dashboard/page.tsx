@@ -468,6 +468,8 @@ import LogoutButton from "@/components/logout-button"
 import NotificationBell from "@/components/notification-bell"
 import toast, { Toaster } from "react-hot-toast"
 import ChatBot from "@/components/chat"
+import Stats from "@/components/new/stats" // adjust path if needed
+
 
 interface Group {
   id: string
@@ -525,6 +527,16 @@ export default function Dashboard() {
       setLoading(false)
     }
   }
+
+  const getOrgMeta = (group: Group) => {
+  return {
+    totalSpent: Math.abs(Number(group.balance)) || 0, // safe fallback
+    departmentsCount: group.members
+      .map(m => m.role)
+      .length, // or replace later with real departments
+  }
+}
+
 
   const handleLeaveGroup = async () => {
     if (!selectedGroup) return
@@ -792,6 +804,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Balance - Prominent */}
+                    {group.type === "FRIENDS" && 
                     <div className="mb-4 p-4 bg-zinc-950 rounded-xl">
                       <p className="text-xs text-gray-500 mb-1">Your Balance</p>
                       <p className={`text-3xl font-bold ${
@@ -805,6 +818,19 @@ export default function Dashboard() {
                           : "You owe"}
                       </p>
                     </div>
+                    }
+                    
+
+                    {group.type === "ORGANIZATION" && (
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <Stats
+                          group={group}
+                          totalSpent={getOrgMeta(group).totalSpent}
+                          departmentsCount={getOrgMeta(group).departmentsCount}
+                        />
+                      </div>
+                    )}
+
 
                     {/* Stats Row */}
                     <div className="flex items-center gap-4 mb-4 pb-4 border-b border-zinc-800">

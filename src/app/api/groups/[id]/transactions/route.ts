@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,16 +17,25 @@ export async function POST(
       )
     }
 
-    const groupId = params.id
-    const { 
-      description, 
-      amount, 
-      date, 
-      paidBy, 
-      participants, 
+    // Await params in Next.js 15+
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
+    const {
+      description,
+      amount,
+      date,
+      paidBy,
+      participants,
       department,
       category,
-      customShares 
+      customShares
     } = await request.json()
 
     if (!description || !amount || !paidBy || !participants || participants.length === 0) {
@@ -84,10 +93,17 @@ export async function POST(
       )
     }
 
-    // Calculate shares - equal or custom
-    let participantShares: { userId: string; share: number }[] = []
+    // For organization groups, expenses should NOT be split between members
+    // They are organizational expenses that don't affect member balances
+    const isOrganizationGroup = userMember.group.type === "ORGANIZATION";
     
-    if (customShares && Object.keys(customShares).length === participants.length) {
+    // Calculate shares - equal or custom (only for FRIENDS groups)
+    let participantShares: { userId: string; share: number }[] = []
+
+    if (isOrganizationGroup) {
+      // For organization groups, no splitting - just record who paid
+      participantShares = []
+    } else if (customShares && Object.keys(customShares).length === participants.length) {
       // Validate custom shares
       const totalCustomShare = Object.values(customShares).reduce((sum: number, share: any) => sum + Number(share), 0)
       if (Math.abs(totalCustomShare - amount) > 0.01) {
@@ -96,18 +112,33 @@ export async function POST(
           { status: 400 }
         )
       }
-      
+
       participantShares = participants.map((userId: string) => ({
         userId,
         share: Number(customShares[userId]) || 0
       }))
     } else {
-      // Equal sharing
+      // Equal sharing for FRIENDS groups
       const amountPerPerson = amount / participants.length
       participantShares = participants.map((userId: string) => ({
         userId,
         share: amountPerPerson
       }))
+    }
+
+    // Prepare TransactionParticipant entries
+    const participantsMap = new Map<string, { paid: number, owed: number }>();
+
+    // Initialize payer
+    participantsMap.set(paidBy, { paid: amount, owed: 0 });
+
+    // Add shares (owed) - only for FRIENDS groups
+    if (!isOrganizationGroup) {
+      participantShares.forEach(({ userId, share }) => {
+        const current = participantsMap.get(userId) || { paid: 0, owed: 0 };
+        current.owed += share;
+        participantsMap.set(userId, current);
+      });
     }
 
     // Create transaction with participants
@@ -121,48 +152,61 @@ export async function POST(
         department: department || null,
         category: category || null,
         participants: {
-          create: participantShares.map(({ userId, share }) => ({
+          create: Array.from(participantsMap.entries()).map(([userId, { paid, owed }]) => ({
             userId,
-            paid: userId === paidBy ? amount : 0,
-            owed: userId === paidBy ? 0 : share
+            paid,
+            owed
           }))
         }
       }
     })
 
-    // Update member balances
-    const numParticipants = participants.length;
-    const amountPerPerson = numParticipants > 0 ? amount / numParticipants : 0;
+    // Update member balances - ONLY for FRIENDS groups
+    // Organization groups don't affect member balances
+    if (!isOrganizationGroup) {
+      const numParticipants = participants.length;
+      const amountPerPerson = numParticipants > 0 ? amount / numParticipants : 0;
 
-    // Get all affected users: participants + paidBy
-    const affectedUsers = new Set([...participants, paidBy]);
+      // Get all affected users: participants + paidBy
+      const affectedUsers = new Set([...participants, paidBy]);
 
-    // Fetch group members for all affected users
-    const groupMembersForUpdate = await prisma.groupMember.findMany({
-      where: {
-        groupId: groupId,
-        userId: {
-          in: Array.from(affectedUsers)
-        }
-      }
-    });
-
-    await Promise.all(
-      groupMembersForUpdate.map(async (member: any) => {
-        const paidByMember = member.userId === paidBy ? amount : 0;
-        const share = participants.includes(member.userId) ? amountPerPerson : 0;
-        const balanceChange = paidByMember - share;
-
-        await prisma.groupMember.update({
-          where: { id: member.id },
-          data: {
-            balance: {
-              increment: balanceChange
-            }
+      // Fetch group members for all affected users
+      const groupMembersForUpdate = await prisma.groupMember.findMany({
+        where: {
+          groupId: groupId,
+          userId: {
+            in: Array.from(affectedUsers)
           }
-        });
-      })
-    );
+        }
+      });
+
+      await Promise.all(
+        groupMembersForUpdate.map(async (member: any) => {
+          const paidByMember = member.userId === paidBy ? amount : 0;
+          const share = participants.includes(member.userId) ? amountPerPerson : 0; // Note: this assumes equal split for balance update. 
+          // If custom shares are used, we should use participantShares to find the share.
+
+          let userShare = 0;
+          if (customShares) {
+            const pShare = participantShares.find(p => p.userId === member.userId);
+            userShare = pShare ? pShare.share : 0;
+          } else {
+            userShare = participants.includes(member.userId) ? amountPerPerson : 0;
+          }
+
+          const balanceChange = paidByMember - userShare;
+
+          await prisma.groupMember.update({
+            where: { id: member.id },
+            data: {
+              balance: {
+                increment: balanceChange
+              }
+            }
+          });
+        })
+      );
+    }
 
     // Create notifications for all group members except the one who added the transaction
     const otherMembers = groupMembers.filter((m: any) => m.userId !== session.user.id)
@@ -181,8 +225,12 @@ export async function POST(
     return NextResponse.json({ transaction }, { status: 201 })
   } catch (error) {
     console.error("Error creating transaction:", error)
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error("Error details:", error.message, error.stack)
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     )
   }

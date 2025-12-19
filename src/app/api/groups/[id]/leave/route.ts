@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +14,15 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const groupId = params.id;
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const leavingUserId = session.user.id;
 
     // Fetch member info along with group details
@@ -33,8 +41,9 @@ export async function POST(
       return NextResponse.json({ error: "You are not part of this group." }, { status: 403 });
     }
 
-    // Check if the user has any pending balance
-    if (member.balance.toNumber() !== 0) {
+    // Check if the user has any pending balance (only for FRIENDS groups)
+    // Organization groups don't track member balances
+    if (member.group.type === "FRIENDS" && member.balance.toNumber() !== 0) {
       return NextResponse.json(
         { error: "You must settle your balance before leaving the group." },
         { status: 400 }

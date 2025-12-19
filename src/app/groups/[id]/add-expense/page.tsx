@@ -12,7 +12,7 @@ interface GroupMember {
   user: {
     id: string
     name: string
-    department :string
+    department: string
   }
 }
 
@@ -28,7 +28,7 @@ export default function AddExpense() {
   const router = useRouter()
   const params = useParams()
   const groupId = params.id as string
-  
+
   const [group, setGroup] = useState<Group | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -46,7 +46,7 @@ export default function AddExpense() {
     category: "",
     department: ""
   })
-  
+
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -67,8 +67,8 @@ export default function AddExpense() {
         const data = await response.json()
         setGroup(data.group)
         // Set current user as default payer
-        const currentUser = data.group.members.find((m: GroupMember) => 
-          m.user.name === session?.user?.name
+        const currentUser = data.group.members.find((m: GroupMember) =>
+          m.user.id === session?.user?.id
         )
         if (currentUser) {
           setFormData(prev => ({
@@ -97,6 +97,16 @@ export default function AddExpense() {
       setError("Please select at least one participant")
       setSubmitting(false)
       return
+    }
+
+    if (!formData.paidBy) {
+      if (session?.user?.id) {
+        formData.paidBy = session.user.id;
+      } else {
+        setError("Payer information is missing. Please refresh the page.")
+        setSubmitting(false)
+        return
+      }
     }
 
     try {
@@ -183,7 +193,7 @@ export default function AddExpense() {
     return null
   }
 
-  const amountPerPerson = formData.participants.length > 0 && formData.amount 
+  const amountPerPerson = formData.participants.length > 0 && formData.amount
     ? (parseFloat(formData.amount) / formData.participants.length).toFixed(2)
     : "0.00"
 
@@ -281,7 +291,7 @@ export default function AddExpense() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Department</label>
                     <p className="mt-1 text-green-700 font-medium">{orgData.department} </p>
-                    
+
                     {/* <input
                       type="text"
                       name="department"

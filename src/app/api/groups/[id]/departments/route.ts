@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,7 +17,15 @@ export async function POST(
       )
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const { departmentName } = await request.json()
 
     if (!departmentName || departmentName.trim() === "") {
@@ -89,7 +97,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -101,7 +109,15 @@ export async function DELETE(
       )
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
     const { searchParams } = new URL(request.url)
     const departmentName = searchParams.get('department')
 
@@ -181,7 +197,7 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -193,7 +209,15 @@ export async function GET(
       )
     }
 
-    const groupId = params.id
+    const resolvedParams = await params
+    const groupId = resolvedParams.id
+
+    if (!groupId) {
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      )
+    }
 
     // Check if user is a member of this group
     const userMember = await prisma.groupMember.findUnique({

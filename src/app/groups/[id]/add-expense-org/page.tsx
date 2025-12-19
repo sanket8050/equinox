@@ -121,7 +121,7 @@ export default function AddExpenseOrg() {
   }, [session, groupId])
 
   useEffect(() => {
-    if (!loading && (!session || !group || group.type !== "ORGANIZATION" || !userRole )) {
+    if (!loading && (!session || !group || group.type !== "ORGANIZATION" || !userRole)) {
       router.push(`/groups/${groupId}`)
     }
     // Optional: Restrict to admins only by uncommenting:
@@ -129,7 +129,7 @@ export default function AddExpenseOrg() {
   }, [loading, session, group, userRole, userDepartment, router, groupId])
 
   const calculateMetrics = (group: Group | null) => {
-    const totalCollected = 
+    const totalCollected =
       (group?.initialContributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0) +
       (group?.donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0)
     const totalSpent = group?.transactions?.reduce((sum, t) => t.isDeleted ? sum : sum + Number(t.amount), 0) || 0
@@ -145,7 +145,7 @@ export default function AddExpenseOrg() {
     setSubmitting(true)
     setError("")
 
-    if (!formData.description || !formData.amount || !formData.paidBy || !userDepartment) {
+    if (!formData.description || !formData.amount || !formData.paidBy) {
       setError("Please fill in all required fields")
       setSubmitting(false)
       return
@@ -158,14 +158,21 @@ export default function AddExpenseOrg() {
       return
     }
 
-    const { remainingBalance } = calculateMetrics(group)
-    if (amount > remainingBalance) {
-      setError(`Expense exceeds available balance ($${remainingBalance.toFixed(2)})`)
+    // Validate that paidBy user is a member
+    if (!group?.members?.some(m => m.user.id === formData.paidBy)) {
+      setError("Selected payer is not a member of this group")
       setSubmitting(false)
       return
     }
 
     try {
+      console.log("Submitting org expense:", { 
+        description: formData.description, 
+        amount, 
+        paidBy: formData.paidBy,
+        department: userDepartment 
+      })
+
       const res = await fetch(`/api/groups/${groupId}/transactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -174,16 +181,22 @@ export default function AddExpenseOrg() {
           amount,
           date: formData.date,
           paidBy: formData.paidBy,
-          department: userDepartment
+          department: userDepartment || null, // Department is optional
+          participants: [formData.paidBy]
         }),
       })
-      if (res.ok) router.push(`/groups/${groupId}`)
-      else {
-        const err = await res.json()
-        setError(err.error || "Failed to add expense")
+
+      const responseData = await res.json()
+      console.log("Response:", res.status, responseData)
+
+      if (res.ok) {
+        router.push(`/groups/${groupId}`)
+      } else {
+        setError(responseData.error || "Failed to add expense")
       }
-    } catch {
-      setError("An error occurred while adding the expense")
+    } catch (error) {
+      console.error("Error adding expense:", error)
+      setError(error instanceof Error ? error.message : "An error occurred while adding the expense")
     } finally {
       setSubmitting(false)
     }
@@ -228,11 +241,10 @@ export default function AddExpenseOrg() {
         <div className="bg-white shadow-md rounded-lg backdrop-blur-sm bg-opacity-80 mb-6">
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Financial Overview</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <StatCard title="Total Collected" value={`$${totalCollected.toFixed(2)}`} icon={DollarSign} color="blue-100" />
               <StatCard title="Total Spent" value={`$${totalSpent.toFixed(2)}`} icon={DollarSign} color="red-100" />
               <StatCard title="Remaining Balance" value={`$${remainingBalance.toFixed(2)}`} icon={DollarSign} color="green-100" />
-              <StatCard title="Your Spending" value={`$${userSpent.toFixed(2)}`} icon={Users} color="purple-100" />
             </div>
           </div>
         </div>
@@ -323,7 +335,7 @@ export default function AddExpenseOrg() {
             </Link>
             <button
               type="submit"
-              disabled={submitting || !formData.description || !formData.amount || !formData.paidBy || !userDepartment}
+              disabled={submitting || !formData.description || !formData.amount || !formData.paidBy}
               className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-transform hover:scale-105"
             >
               {submitting ? "Adding..." : "Add Expense"}
