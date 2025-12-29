@@ -135,7 +135,7 @@ The application uses the following main models:
 - `GET /api/groups` - Fetch user's groups
 - `POST /api/groups` - Create new group
 - `GET /api/groups/[id]` - Get group details
-
+   
 ### Transactions
 - `POST /api/groups/[id]/transactions` - Add expense
 - `PUT /api/transactions/[id]` - Update transaction
